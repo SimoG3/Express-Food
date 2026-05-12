@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <rect width="32" height="32" rx="3" fill="#111111"/>
+  <!-- Speed lines -->
+  <line x1="1" y1="11" x2="8" y2="11" stroke="#E31E24" stroke-width="2" stroke-linecap="round"/>
+  <line x1="2" y1="15" x2="7" y2="15" stroke="#E31E24" stroke-width="1.5" stroke-linecap="round"/>
+  <!-- Red arc top -->
+  <path d="M8 16 A10 10 0 0 1 28 16" stroke="#E31E24" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <!-- Green diamond -->
+  <polygon points="16,6 28,16 16,26 12,16" fill="#2D8A2D"/>
+  <!-- Car body -->
+  <rect x="13" y="17" width="13" height="6" rx="1.5" fill="#111111"/>
+  <rect x="15" y="13" width="8" height="5" rx="1" fill="#111111"/>
+  <rect x="15.5" y="13.5" width="7" height="3.5" rx="0.8" fill="#2D8A2D" opacity="0.7"/>
+  <!-- Wheels -->
+  <circle cx="15.5" cy="24" r="2.5" fill="#111" stroke="#E31E24" stroke-width="1"/>
+  <circle cx="15.5" cy="24" r="1" fill="#E31E24"/>
+  <circle cx="23.5" cy="24" r="2.5" fill="#111" stroke="#E31E24" stroke-width="1"/>
+  <circle cx="23.5" cy="24" r="1" fill="#E31E24"/>
+  <!-- Arc bottom dashed -->
+  <path d="M8 16 A10 10 0 0 0 28 16" stroke="#E31E24" stroke-width="1.5" fill="none" stroke-dasharray="2 2"/>
+</svg>
