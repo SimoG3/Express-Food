@@ -1,5 +1,5 @@
 import { useApp } from '../context/AppContext';
-import { COLOR, BRAND_NAME, WHATSAPP_ADMIN } from '../data/constants';
+import { COLOR } from '../data/constants';
 import Logo from './Logo';
 
 const COLS = [
@@ -11,10 +11,6 @@ const COLS = [
 
 export default function Footer() {
   const { navigate, setProLoginOpen } = useApp();
-
-  const openWhatsApp = () => {
-    window.open(`https://wa.me/${WHATSAPP_ADMIN}?text=${encodeURIComponent('Bonjour, je souhaite en savoir plus sur vos services.')}`, '_blank');
-  };
 
   return (
     <footer style={{ background: COLOR.dark }}>
@@ -34,10 +30,6 @@ export default function Footer() {
             <p className="text-xs font-semibold" style={{ color: '#9ca3af' }}>
               Livraison Express partout en France
             </p>
-            <a href={`https://wa.me/${WHATSAPP_ADMIN}`} target="_blank" rel="noreferrer"
-              className="text-sm font-black" style={{ color: COLOR.green }}>
-              +33 7 45 46 18 70
-            </a>
           </div>
         </div>
 
@@ -69,11 +61,6 @@ export default function Footer() {
             </p>
           </div>
           <div className="flex gap-2 flex-shrink-0">
-            <button onClick={openWhatsApp}
-              className="text-white font-bold px-4 py-2 rounded-sm text-xs flex items-center gap-1"
-              style={{ background:'#25D366' }}>
-              📲 WhatsApp
-            </button>
             <button onClick={() => setProLoginOpen(true)}
               className="text-white font-black px-5 py-2 rounded-sm text-sm"
               style={{ background: COLOR.red }}>

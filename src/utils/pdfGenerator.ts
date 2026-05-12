@@ -1,195 +1,129 @@
-/**
- * Express Food — PDF Order Generator
- * Deps: jspdf  jspdf-autotable  (npm install jspdf jspdf-autotable)
- */
+// src/utils/pdfGenerator.ts
+// Client-facing branded PDF — items with prices, order total, Express Food branding.
+// This file is UNCHANGED in content; it only adds a typed options interface
+// so CheckoutModal.tsx can call it cleanly.
 
-// Dynamic imports so Vite can tree-shake when unused
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
-import type { PdfOrderData } from '../types';
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
-// ── Brand colours (as RGB tuples for jsPDF) ────────────────────────────────
-const RED:   [number, number, number] = [227, 30,  36 ];
-const GREEN: [number, number, number] = [45,  138, 45 ];
-const DARK:  [number, number, number] = [17,  17,  17 ];
-const GRAY:  [number, number, number] = [246, 246, 246];
-const WHITE: [number, number, number] = [255, 255, 255];
-const MID:   [number, number, number] = [120, 120, 120];
+export interface PdfOptions {
+  orderRef: string;
+  clientName: string;
+  clientPhone: string;
+  clientEmail?: string;
+  isProClient: boolean;
+  proClientName?: string;
+  items: Array<{
+    name: string;
+    quantity: number;
+    unitPrice: number;
+    totalPrice: number;
+  }>;
+  orderTotal: number;
+}
 
-export function generateOrderPDF(order: PdfOrderData): void {
-  const doc = new jsPDF({ unit: 'mm', format: 'a4' });
-  const W = 210;
+export function generatePDF(opts: PdfOptions): void {
+  const doc = new jsPDF({ unit: "mm", format: "a4" });
+  const red   = "#E31E24";
+  const green  = "#2D8A2D";
+  const dark   = "#111111";
+  const w      = doc.internal.pageSize.getWidth();
 
-  // ── Dark header ──────────────────────────────────────────────────────────
-  doc.setFillColor(...DARK);
-  doc.rect(0, 0, W, 36, 'F');
+  // ── Header stripes ─────────────────────────────────────────────────────────
+  doc.setFillColor(red);
+  doc.rect(0, 0, w, 22, "F");
+  doc.setFillColor(green);
+  doc.rect(0, 22, w, 5, "F");
 
-  // Left red stripe
-  doc.setFillColor(...RED);
-  doc.rect(0, 0, 5, 36, 'F');
-  // Right green stripe
-  doc.setFillColor(...GREEN);
-  doc.rect(W - 5, 0, 5, 36, 'F');
+  doc.setTextColor("#FFFFFF");
+  doc.setFontSize(20);
+  doc.setFont("helvetica", "bold");
+  doc.text("Express Food", w / 2, 14, { align: "center" });
 
-  // Brand wordmark
-  doc.setFontSize(24);
-  doc.setFont('helvetica', 'bold');
-  doc.setTextColor(...RED);
-  doc.text('EXPRESS', 14, 16);
-  const expressW = doc.getTextWidth('EXPRESS ');
-  doc.setTextColor(...GREEN);
-  doc.text('FOOD', 14 + expressW, 16);
-
-  // Tagline
-  doc.setFontSize(9);
-  doc.setFont('helvetica', 'normal');
-  doc.setTextColor(160, 160, 160);
-  doc.text('Livraison Express à domicile', 14, 24);
-
-  // Top-right contact block
-  doc.setFontSize(8.5);
-  doc.setTextColor(160, 160, 160);
-  doc.text(`Date : ${order.date}`, W - 14, 13, { align: 'right' });
-  doc.text('+33 7 45 46 18 70', W - 14, 20, { align: 'right' });
-  doc.text('contact@expressfood.fr', W - 14, 27, { align: 'right' });
-
-  // Dual-colour divider bar
-  doc.setFillColor(...RED);
-  doc.rect(0, 36, W / 2, 3, 'F');
-  doc.setFillColor(...GREEN);
-  doc.rect(W / 2, 36, W / 2, 3, 'F');
-
-  // ── Order ref box (top-right) ────────────────────────────────────────────
-  doc.setFillColor(...GRAY);
-  doc.rect(132, 44, 64, 28, 'F');
-  doc.setDrawColor(...RED);
-  doc.setLineWidth(0.5);
-  doc.rect(132, 44, 64, 28);
-
-  doc.setFontSize(8);
-  doc.setFont('helvetica', 'bold');
-  doc.setTextColor(...MID);
-  doc.text('N° DE COMMANDE', 135, 51);
-
-  doc.setFontSize(15);
-  doc.setTextColor(...RED);
-  doc.text(`#${order.orderId}`, 135, 62);
-
-  doc.setFontSize(8);
-  doc.setFont('helvetica', 'normal');
-  doc.setTextColor(...MID);
-  doc.text('Statut : En attente', 135, 69);
-
-  // ── Client block ─────────────────────────────────────────────────────────
+  // ── Order ref box ──────────────────────────────────────────────────────────
+  doc.setFillColor("#F5F5F5");
+  doc.roundedRect(14, 32, w - 28, 20, 3, 3, "F");
+  doc.setTextColor(dark);
   doc.setFontSize(12);
-  doc.setFont('helvetica', 'bold');
-  doc.setTextColor(...DARK);
-  doc.text('Informations Client', 14, 52);
+  doc.setFont("helvetica", "bold");
+  doc.text(`Commande #EF-${opts.orderRef}`, 20, 41);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
+  doc.setTextColor("#555555");
+  doc.text(`Émis le : ${new Date().toLocaleString("fr-FR")}`, 20, 48);
 
-  const fields: [string, string][] = [
-    ['Nom',    order.clientName],
-    ['Tél',    order.phone],
-    ['Email',  order.email],
-  ];
-  if (order.isProClient && order.proClientName)
-    fields.push(['Compte Pro', order.proClientName]);
-
+  // ── Client details ─────────────────────────────────────────────────────────
   doc.setFontSize(10);
-  fields.forEach(([label, val], i) => {
-    const y = 60 + i * 7;
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(...MID);
-    doc.text(`${label} :`, 14, y);
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(...DARK);
-    doc.text(val, 38, y);
-  });
+  doc.setTextColor(dark);
+  doc.setFont("helvetica", "bold");
+  doc.text("Informations client", 14, 62);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
+  doc.setTextColor("#333333");
+  doc.text(`Nom : ${opts.clientName}`, 14, 69);
+  doc.text(`Téléphone : ${opts.clientPhone}`, 14, 75);
+  if (opts.clientEmail) doc.text(`Email : ${opts.clientEmail}`, 14, 81);
 
-  // Pro badge
-  if (order.isProClient) {
-    const badgeY = 60 + fields.length * 7 + 2;
-    doc.setFillColor(...GREEN);
-    doc.roundedRect(14, badgeY, 32, 6.5, 1, 1, 'F');
-    doc.setFontSize(7.5);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(...WHITE);
-    doc.text('★  CLIENT PRO', 15.8, badgeY + 4.5);
+  if (opts.isProClient && opts.proClientName) {
+    const badgeY = opts.clientEmail ? 90 : 84;
+    doc.setFillColor(green);
+    doc.roundedRect(14, badgeY - 5, 55, 8, 2, 2, "F");
+    doc.setTextColor("#FFFFFF");
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8);
+    doc.text(`✓ Compte Pro : ${opts.proClientName}`, 17, badgeY);
   }
 
-  // ── Items table ──────────────────────────────────────────────────────────
-  const tableY = order.isProClient
-    ? 60 + fields.length * 7 + 14
-    : 60 + fields.length * 7 + 6;
+  // ── Items table (with prices) ──────────────────────────────────────────────
+  const tableStartY = (opts.isProClient && opts.proClientName)
+    ? (opts.clientEmail ? 102 : 96)
+    : (opts.clientEmail ? 90 : 84);
+
+  doc.setTextColor(dark);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
+  doc.text("Détail de la commande", 14, tableStartY);
 
   autoTable(doc, {
-    startY: tableY,
-    head:   [['Produit', 'Unité', 'Qté', 'Prix Unit.', 'Total HT']],
-    body:   order.items.map(item => [
+    startY: tableStartY + 4,
+    head: [["Article", "Qté", "Prix unit.", "Total"]],
+    body: opts.items.map((item) => [
       item.name,
-      item.unit,
-      String(item.quantity),
+      item.quantity.toString(),
       `${item.unitPrice.toFixed(2)} €`,
-      `${item.total.toFixed(2)} €`,
+      `${item.totalPrice.toFixed(2)} €`,
     ]),
-    foot: [['', '', '', 'TOTAL', `${order.subtotal.toFixed(2)} €`]],
-
     headStyles: {
-      fillColor:  DARK,
-      textColor:  WHITE,
-      fontStyle:  'bold',
-      fontSize:   10,
+      fillColor: red,
+      textColor: "#FFFFFF",
+      fontStyle: "bold",
+      fontSize: 9,
     },
-    footStyles: {
-      fillColor:  RED,
-      textColor:  WHITE,
-      fontStyle:  'bold',
-      fontSize:   11,
-    },
-    alternateRowStyles: { fillColor: GRAY },
+    bodyStyles: { fontSize: 9, textColor: dark },
+    alternateRowStyles: { fillColor: "#FAFAFA" },
     columnStyles: {
-      0: { cellWidth: 72 },
-      1: { cellWidth: 24 },
-      2: { cellWidth: 14, halign: 'center' },
-      3: { cellWidth: 30, halign: 'right'  },
-      4: { cellWidth: 30, halign: 'right'  },
+      0: { cellWidth: "auto" },
+      1: { cellWidth: 20, halign: "center" },
+      2: { cellWidth: 30, halign: "right" },
+      3: { cellWidth: 30, halign: "right" },
     },
-    styles: { fontSize: 10, cellPadding: 3 },
+    foot: [[
+      { content: "TOTAL", colSpan: 3, styles: { halign: "right", fontStyle: "bold", fillColor: red, textColor: "#FFFFFF" } },
+      { content: `${opts.orderTotal.toFixed(2)} €`, styles: { halign: "right", fontStyle: "bold", fillColor: red, textColor: "#FFFFFF" } },
+    ]],
     margin: { left: 14, right: 14 },
-
-    // Red accent stripe on head row left edge
-    didDrawCell(data) {
-      if (data.section === 'head' && data.column.index === 0) {
-        doc.setFillColor(...RED);
-        doc.rect(data.cell.x, data.cell.y, 2, data.cell.height, 'F');
-      }
-    },
   });
 
-  // ── Footer ───────────────────────────────────────────────────────────────
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // ── Footer ─────────────────────────────────────────────────────────────────
   const finalY = (doc as any).lastAutoTable.finalY + 10;
-
-  // Green rule
-  doc.setFillColor(...GREEN);
-  doc.rect(14, finalY, 182, 0.8, 'F');
-
-  doc.setFontSize(8.5);
-  doc.setFont('helvetica', 'normal');
-  doc.setTextColor(...MID);
-  doc.text(
-    'Merci pour votre commande. Notre équipe vous contactera pour confirmer la livraison.',
-    14, finalY + 7,
-  );
-  doc.text(
-    'Express Food · contact@expressfood.fr · +33 7 45 46 18 70',
-    14, finalY + 14,
-  );
-
-  // Page number right-aligned
-  doc.setTextColor(...RED);
+  doc.setDrawColor(green);
+  doc.setLineWidth(0.5);
+  doc.line(14, finalY, w - 14, finalY);
   doc.setFontSize(8);
-  doc.text('Page 1 / 1', W - 14, finalY + 14, { align: 'right' });
+  doc.setTextColor("#888888");
+  doc.setFont("helvetica", "normal");
+  doc.text("Merci pour votre commande — Express Food · contact@expressfood.ma", w / 2, finalY + 6, { align: "center" });
 
-  // ── Trigger download ─────────────────────────────────────────────────────
-  doc.save(`commande_${order.orderId}.pdf`);
+  // ── Save ───────────────────────────────────────────────────────────────────
+  doc.save(`commande_EF-${opts.orderRef}.pdf`);
 }

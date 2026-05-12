@@ -9,8 +9,8 @@ export const ADMIN_PASSWORD  = 'ENSA_Grocery2024!';
 // ── Shopify ───────────────────────────────────────────────────────────────────
 export const SHOPIFY_STORE   = 'your-store-name';
 
-// ── WhatsApp (no +, no spaces) ────────────────────────────────────────────────
-export const WHATSAPP_ADMIN  = '33745461870';
+// ── Discord Webhook ────────────────────────────────────────────────
+export const DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1503757018299764837/oPqeoawzkLgY6Eh49guHQBn9gBMvXWx4ZAW9moK4NDIGn-35ZFqGWvK83NIJwEOFBK5B";
 
 // ── Palette ───────────────────────────────────────────────────────────────────
 export const COLOR = {
