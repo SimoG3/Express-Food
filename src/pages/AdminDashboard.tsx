@@ -31,8 +31,9 @@ function TableHead({ children }: { children: React.ReactNode }) {
 }
 
 const EMPTY_FORM: ProductFormState = {
-  name: '', category: 'Fruits', price: '', unit: 'kg', image: '',
-  variantId: '', inStock: true, description: '', discount: '', isNew: false, featured: false,
+  name: '', category: 'Fruits', subcategory: '', price: '', prixHT: '', tva: '5.5%',
+  unit: 'kg', image: '', variantId: '', inStock: true, description: '',
+  discount: '', isNew: false, featured: false,
 };
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -56,7 +57,16 @@ function ProductsTab() {
   const openAdd  = () => { setEditing(null); setForm(EMPTY_FORM); setErrors({}); setImgMode('url'); setView('form'); };
   const openEdit = (p: Product) => {
     setEditing(p);
-    setForm({ ...p, price: String(p.price), discount: String(p.discount ?? ''), isNew: !!p.isNew, featured: !!p.featured });
+    setForm({
+      ...p,
+      subcategory: p.subcategory ?? '',
+      price:       String(p.price),
+      prixHT:      p.prixHT !== undefined ? String(p.prixHT) : '',
+      tva:         p.tva ?? '5.5%',
+      discount:    String(p.discount ?? ''),
+      isNew:       !!p.isNew,
+      featured:    !!p.featured,
+    });
     setErrors({}); setImgMode('url'); setView('form');
   };
 
@@ -79,6 +89,7 @@ function ProductsTab() {
     const p = {
       ...form,
       price:    parseFloat(form.price),
+      prixHT:   form.prixHT !== '' ? parseFloat(form.prixHT) : undefined,
       discount: form.discount ? Number(form.discount) : undefined,
     } as Omit<Product, 'id'>;
     if (editing) updateProduct({ ...p, id: editing.id });
