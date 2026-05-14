@@ -1,17 +1,17 @@
-import { ShoppingCart, Minus, Plus, Tag, Sparkles } from 'lucide-react';
+import { ShoppingCart, Minus, Plus, Sparkles, Lock } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import SafeImage from './SafeImage';
 import { COLOR } from '../data/constants';
 import type { Product } from '../types';
 
 export default function ProductCard({ product }: { product: Product }) {
-  const { cart, addToCart, updateQty, priceFor, effectivePrice, activeProClient } = useApp();
+  const { cart, addToCart, updateQty, effectivePrice, activeProClient } = useApp();
   const item = cart.find(i => i.id === product.id);
   const qty  = item?.quantity ?? 0;
 
+  const isPro       = !!activeProClient;
   const finalPrice  = effectivePrice(product);
-  const hasOverride = activeProClient && activeProClient.priceOverrides[product.id] !== undefined;
-  const hasDiscount = !activeProClient && !!product.discount;
+  const hasDiscount = !isPro && !!product.discount;
   const savings     = hasDiscount ? +(product.price - finalPrice).toFixed(2) : 0;
 
   return (
@@ -37,10 +37,10 @@ export default function ProductCard({ product }: { product: Product }) {
               -{product.discount}%
             </span>
           )}
-          {hasOverride && (
+          {isPro && (
             <span className="text-white font-black leading-none px-1.5 py-0.5 rounded-sm flex items-center gap-0.5"
               style={{ background: COLOR.green, fontSize: '9px' }}>
-              <Tag size={8} /> PRO
+              <Lock size={8} /> PRO
             </span>
           )}
         </div>
@@ -63,26 +63,38 @@ export default function ProductCard({ product }: { product: Product }) {
 
         {/* Price + action */}
         <div className="flex items-end justify-between gap-1 mt-auto">
-          <div>
-            {hasDiscount && (
-              <div className="text-xs text-gray-400 line-through leading-none mb-0.5">
-                {product.price.toFixed(2)} €
-              </div>
-            )}
-            <div className="leading-none flex items-baseline gap-0.5">
-              <span className="font-black text-xl"
-                style={{ color: hasOverride ? COLOR.green : COLOR.red }}>
-                {finalPrice.toFixed(2)}
+
+          {/* PRICE BLOCK — hidden entirely for pro clients */}
+          {isPro ? (
+            <div className="flex items-center gap-1.5">
+              <Lock size={12} style={{ color: COLOR.green }} />
+              <span className="text-xs font-semibold" style={{ color: COLOR.green }}>
+                Tarif Pro
               </span>
-              <span className="font-black text-sm"
-                style={{ color: hasOverride ? COLOR.green : COLOR.red }}>€</span>
             </div>
-            {hasDiscount && savings > 0 && (
-              <div className="text-xs font-semibold leading-none mt-0.5" style={{ color: COLOR.green }}>
-                -{savings.toFixed(2)} €
+          ) : (
+            <div>
+              {hasDiscount && (
+                <div className="text-xs text-gray-400 line-through leading-none mb-0.5">
+                  {product.price.toFixed(2)} €
+                </div>
+              )}
+              <div className="leading-none flex items-baseline gap-0.5">
+                <span className="font-black text-xl" style={{ color: COLOR.red }}>
+                  {finalPrice.toFixed(2)}
+                </span>
+                <span className="font-black text-sm" style={{ color: COLOR.red }}>€</span>
+                {product.tva && (
+                  <span className="text-xs text-gray-400 ml-1">TTC</span>
+                )}
               </div>
-            )}
-          </div>
+              {hasDiscount && savings > 0 && (
+                <div className="text-xs font-semibold leading-none mt-0.5" style={{ color: COLOR.green }}>
+                  -{savings.toFixed(2)} €
+                </div>
+              )}
+            </div>
+          )}
 
           {product.inStock ? (
             qty > 0 ? (
@@ -93,17 +105,17 @@ export default function ProductCard({ product }: { product: Product }) {
                   <Minus size={12} className="text-gray-600" />
                 </button>
                 <span className="text-sm font-black w-5 text-center tabular-nums"
-                  style={{ color: COLOR.red }}>{qty}</span>
+                  style={{ color: isPro ? COLOR.green : COLOR.red }}>{qty}</span>
                 <button onClick={() => updateQty(product.id, qty + 1)}
                   className="w-7 h-7 text-white flex items-center justify-center rounded-sm"
-                  style={{ background: COLOR.red }}>
+                  style={{ background: isPro ? COLOR.green : COLOR.red }}>
                   <Plus size={12} />
                 </button>
               </div>
             ) : (
               <button onClick={() => addToCart(product)}
                 className="flex items-center gap-1 text-white text-xs font-bold px-3 py-1.5 rounded-sm flex-shrink-0"
-                style={{ background: COLOR.green }}>
+                style={{ background: isPro ? COLOR.green : COLOR.green }}>
                 <ShoppingCart size={11} /> Ajouter
               </button>
             )

@@ -1,13 +1,15 @@
-import { ShoppingCart, X, Plus, Minus, Trash2 } from 'lucide-react';
+import { ShoppingCart, X, Plus, Minus, Trash2, Lock } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import SafeImage from './SafeImage';
 import { COLOR } from '../data/constants';
 
 export default function CartSidebar() {
   const { cart, cartOpen, setCartOpen, cartTotal, updateQty,
-          removeFromCart, clearCart, setCheckoutOpen } = useApp();
+          removeFromCart, clearCart, setCheckoutOpen, activeProClient } = useApp();
 
   if (!cartOpen) return null;
+
+  const isPro = !!activeProClient;
   const totalItems = cart.reduce((s, i) => s + i.quantity, 0);
   const openCheckout = () => { setCartOpen(false); setCheckoutOpen(true); };
 
@@ -18,17 +20,26 @@ export default function CartSidebar() {
 
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 text-white flex-shrink-0"
-          style={{ background: COLOR.dark, borderBottom: `3px solid ${COLOR.red}` }}>
+          style={{ background: COLOR.dark, borderBottom: `3px solid ${isPro ? COLOR.green : COLOR.red}` }}>
           <div className="flex items-center gap-2 font-bold">
             <ShoppingCart size={18} />
             <span>Mon Panier</span>
             {totalItems > 0 && (
               <span className="text-xs rounded-full px-2 py-0.5 font-black"
-                style={{ background: COLOR.red }}>{totalItems}</span>
+                style={{ background: isPro ? COLOR.green : COLOR.red }}>{totalItems}</span>
             )}
           </div>
           <button onClick={() => setCartOpen(false)}><X size={20} /></button>
         </div>
+
+        {/* Pro notice */}
+        {isPro && (
+          <div className="flex items-center gap-2 px-4 py-2 text-xs font-semibold"
+            style={{ background: '#f0faf0', color: COLOR.green, borderBottom: `1px solid ${COLOR.green}30` }}>
+            <Lock size={12} />
+            Compte Pro actif — prix masqués sur ce document
+          </div>
+        )}
 
         {/* Items */}
         <div className="flex-1 overflow-y-auto p-4">
@@ -60,10 +71,10 @@ export default function CartSidebar() {
                         <Minus size={11} className="text-gray-600" />
                       </button>
                       <span className="text-sm font-black w-5 text-center tabular-nums"
-                        style={{ color: COLOR.red }}>{item.quantity}</span>
+                        style={{ color: isPro ? COLOR.green : COLOR.red }}>{item.quantity}</span>
                       <button onClick={() => updateQty(item.id, item.quantity + 1)}
                         className="w-6 h-6 text-white flex items-center justify-center rounded-sm"
-                        style={{ background: COLOR.red }}>
+                        style={{ background: isPro ? COLOR.green : COLOR.red }}>
                         <Plus size={11} />
                       </button>
                     </div>
@@ -71,9 +82,16 @@ export default function CartSidebar() {
                   <div className="flex flex-col items-end justify-between flex-shrink-0">
                     <button onClick={() => removeFromCart(item.id)}
                       className="text-gray-300 hover:text-red-500"><Trash2 size={15} /></button>
-                    <span className="font-black text-sm" style={{ color: COLOR.red }}>
-                      {(item.effectivePrice * item.quantity).toFixed(2)} €
-                    </span>
+                    {/* Hide line price for pro */}
+                    {isPro ? (
+                      <span className="text-xs font-semibold" style={{ color: COLOR.green }}>
+                        <Lock size={10} className="inline mr-0.5" />Pro
+                      </span>
+                    ) : (
+                      <span className="font-black text-sm" style={{ color: COLOR.red }}>
+                        {(item.effectivePrice * item.quantity).toFixed(2)} €
+                      </span>
+                    )}
                   </div>
                 </li>
               ))}
@@ -84,14 +102,27 @@ export default function CartSidebar() {
         {/* Footer */}
         {cart.length > 0 && (
           <div className="flex-shrink-0 border-t p-4" style={{ borderColor: COLOR.border }}>
-            <div className="flex justify-between items-center mb-1">
-              <span className="text-sm text-gray-500">Total ({totalItems} art.)</span>
-              <span className="font-black text-xl" style={{ color: COLOR.red }}>{cartTotal.toFixed(2)} €</span>
-            </div>
-            <p className="text-xs text-gray-400 mb-3">Livraison calculée à l'étape suivante</p>
+            {/* Hide total for pro */}
+            {isPro ? (
+              <div className="flex items-center gap-2 mb-3 p-2.5 rounded-sm"
+                style={{ background: '#f0faf0', color: COLOR.green }}>
+                <Lock size={14} />
+                <span className="text-sm font-semibold">
+                  {totalItems} article{totalItems > 1 ? 's' : ''} — total confidentiel (compte Pro)
+                </span>
+              </div>
+            ) : (
+              <>
+                <div className="flex justify-between items-center mb-1">
+                  <span className="text-sm text-gray-500">Total ({totalItems} art.)</span>
+                  <span className="font-black text-xl" style={{ color: COLOR.red }}>{cartTotal.toFixed(2)} €</span>
+                </div>
+                <p className="text-xs text-gray-400 mb-3">Livraison calculée à l'étape suivante</p>
+              </>
+            )}
             <button onClick={openCheckout}
               className="w-full text-white font-black py-3 rounded-sm text-sm mb-2"
-              style={{ background: COLOR.red }}>
+              style={{ background: isPro ? COLOR.green : COLOR.red }}>
               Valider la commande →
             </button>
             <button onClick={clearCart} className="w-full text-gray-400 text-xs py-1 hover:text-red-500">

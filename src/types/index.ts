@@ -1,24 +1,25 @@
 // ── Product ───────────────────────────────────────────────────────────────────
 
-export type Category =
-  | 'Fruits' | 'Vegetables' | 'Dairy' | 'Bakery'
-  | 'Meat' | 'Beverages' | 'Frozen' | 'Pantry' | 'Snacks';
+export type Category = string; // Now fully dynamic from database
 
 export interface Product {
-  id:          string;
-  name:        string;
-  category:    Category | string;
-  price:       number;
-  unit:        string;
-  image:       string;
-  variantId:   string;
-  inStock:     boolean;
-  description: string;
-  discount?:   number;     // e.g. 15 = 15% off
-  isNew?:      boolean;
-  featured?:   boolean;
-  tags?:       string[];
-  createdAt?:  string;     // ISO date
+  id:           string;
+  name:         string;
+  category:     string;
+  subcategory?: string;
+  price:        number;   // Prix TTC (displayed to normal clients)
+  prixHT?:      number;   // Prix HT (for admin reference)
+  tva?:         string;   // '5.5%' | '20%'
+  unit:         string;
+  image:        string;
+  variantId:    string;
+  inStock:      boolean;
+  description:  string;
+  discount?:    number;   // percentage e.g. 15 = 15% off
+  isNew?:       boolean;
+  featured?:    boolean;
+  tags?:        string[];
+  createdAt?:   string;   // ISO date
 }
 
 // ── Cart ─────────────────────────────────────────────────────────────────────
@@ -96,8 +97,10 @@ export type PriceRange = [number, number];
 export type ImageInputMode = 'url' | 'upload';
 
 export interface ProductFormState {
-  name: string; category: string; price: string; unit: string;
-  image: string; variantId: string; inStock: boolean; description: string;
+  name: string; category: string; subcategory: string;
+  price: string; prixHT: string; tva: string;
+  unit: string; image: string; variantId: string;
+  inStock: boolean; description: string;
   discount: string; isNew: boolean; featured: boolean;
 }
 
