@@ -50,24 +50,7 @@ export default function CheckoutModal() {
 
     const orderRef = generateOrderRef();
 
-    // 1. Download the client PDF
-    generatePDF({
-      orderRef,
-      clientName:    name.trim(),
-      clientPhone:   phone.trim(),
-      clientEmail:   email.trim() || undefined,
-      isProClient:   !!activeProClient,
-      proClientName: activeProClient?.name,
-      items: cart.map((item) => ({
-        name:       item.name,
-        quantity:   item.quantity,
-        unitPrice:  item.effectivePrice,
-        totalPrice: item.effectivePrice * item.quantity,
-      })),
-      orderTotal,
-    });
-
-    // 2. Build Discord embed
+    // 1. Build Discord embed
     const itemsText = cart
       .map((item) =>
         `> **${item.name}** — ×${item.quantity} — ${(item.effectivePrice * item.quantity).toFixed(2)} €`
@@ -100,7 +83,7 @@ export default function CheckoutModal() {
       ],
     };
 
-    // 3. POST to our own Vercel API route — no CORS issues on any browser
+    // 2. POST to Vercel API route FIRST — before any file download
     try {
       const res = await fetch("/api/notify", {
         method:  "POST",
@@ -108,14 +91,51 @@ export default function CheckoutModal() {
         body:    JSON.stringify(discordBody),
       });
 
-      if (res.ok) {
-        setSubmitState("success");
-        clearCart();
-      } else {
+      if (!res.ok) {
         throw new Error(`HTTP ${res.status}`);
       }
+
+      // 3. Discord succeeded — NOW trigger the PDF download
+      //    (iOS Safari won't interrupt a completed fetch)
+      generatePDF({
+        orderRef,
+        clientName:    name.trim(),
+        clientPhone:   phone.trim(),
+        clientEmail:   email.trim() || undefined,
+        isProClient:   !!activeProClient,
+        proClientName: activeProClient?.name,
+        items: cart.map((item) => ({
+          name:       item.name,
+          quantity:   item.quantity,
+          unitPrice:  item.effectivePrice,
+          totalPrice: item.effectivePrice * item.quantity,
+        })),
+        orderTotal,
+      });
+
+      setSubmitState("success");
+      clearCart();
+
     } catch (err: any) {
       console.error("[Discord] notification failed:", err);
+
+      // 4. Even if Discord fails, still give the client their PDF
+      generatePDF({
+        orderRef,
+        clientName:    name.trim(),
+        clientPhone:   phone.trim(),
+        clientEmail:   email.trim() || undefined,
+        isProClient:   !!activeProClient,
+        proClientName: activeProClient?.name,
+        items: cart.map((item) => ({
+          name:       item.name,
+          quantity:   item.quantity,
+          unitPrice:  item.effectivePrice,
+          totalPrice: item.effectivePrice * item.quantity,
+        })),
+        orderTotal,
+      });
+
       setWebhookError(
         `Notification Discord échouée (${err?.message ?? "erreur réseau"}). La commande a bien été traitée côté client.`
       );
