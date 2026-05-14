@@ -7,8 +7,6 @@ import {
 } from "lucide-react";
 import { useApp } from "../context/AppContext";
 import { generatePDF } from "../utils/pdfGenerator";
-import { dispatchOrderWebhook, WebhookPayload } from "../utils/webhookService";
-import { DISCORD_WEBHOOK_URL } from "../data/constants";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -37,7 +35,6 @@ export default function CheckoutModal() {
 
   if (!checkoutOpen) return null;
 
-  // Cart uses effectivePrice (pro overrides already applied)
   const orderTotal = cart.reduce(
     (sum, item) => sum + item.effectivePrice * item.quantity,
     0
@@ -53,7 +50,7 @@ export default function CheckoutModal() {
 
     const orderRef = generateOrderRef();
 
-    // 1. Download the client PDF (branded, with prices) — unchanged behaviour
+    // 1. Download the client PDF
     generatePDF({
       orderRef,
       clientName:    name.trim(),
@@ -70,40 +67,60 @@ export default function CheckoutModal() {
       orderTotal,
     });
 
-    // 2. Build the webhook payload (full data including prices)
-    const payload: WebhookPayload = {
-      orderRef,
-      timestamp: new Date().toISOString(),
-      client: {
-        name:          name.trim(),
-        phone:         phone.trim(),
-        email:         email.trim(),
-        isProClient:   !!activeProClient,
-        proClientName: activeProClient?.name,
-      },
-      items: cart.map((item) => ({
-        name:       item.name,
-        quantity:   item.quantity,
-        unitPrice:  item.effectivePrice,
-        totalPrice: item.effectivePrice * item.quantity,
-      })),
-      orderTotal,
-      currency: "EUR",
+    // 2. Build Discord embed
+    const itemsText = cart
+      .map((item) =>
+        `> **${item.name}** — ×${item.quantity} — ${(item.effectivePrice * item.quantity).toFixed(2)} €`
+      )
+      .join("\n");
+
+    const discordBody = {
+      embeds: [
+        {
+          title: `🛒 Nouvelle Commande — #${orderRef}`,
+          color: 0xe31e24,
+          fields: [
+            { name: "👤 Client",    value: name.trim(),        inline: true },
+            { name: "📞 Téléphone", value: phone.trim(),       inline: true },
+            { name: "📧 Email",     value: email.trim() || "—", inline: true },
+            {
+              name:  activeProClient ? "⭐ Compte Pro" : "👤 Type client",
+              value: activeProClient ? activeProClient.name : "Client Standard",
+              inline: true,
+            },
+            { name: "🧾 Articles commandés", value: itemsText,                        inline: false },
+            { name: "💰 Total",              value: `**${orderTotal.toFixed(2)} €**`, inline: false },
+          ],
+          footer: {
+            text: `Express Food • ${new Date().toLocaleDateString("fr-FR", {
+              day: "2-digit", month: "long", year: "numeric",
+            })}`,
+          },
+        },
+      ],
     };
 
-    // 3. Send Discord notification + admin PDF (no prices)
-    const result = await dispatchOrderWebhook(payload, DISCORD_WEBHOOK_URL);
+    // 3. POST to our own Vercel API route — no CORS issues on any browser
+    try {
+      const res = await fetch("/api/notify", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify(discordBody),
+      });
 
-    if (result.ok) {
-      setSubmitState("success");
-      clearCart();
-    } else {
-      console.error("[Webhook] notification failed:", result);
+      if (res.ok) {
+        setSubmitState("success");
+        clearCart();
+      } else {
+        throw new Error(`HTTP ${res.status}`);
+      }
+    } catch (err: any) {
+      console.error("[Discord] notification failed:", err);
       setWebhookError(
-        `Notification Discord échouée (${result.status ?? result.error}). La commande a bien été traitée côté client.`
+        `Notification Discord échouée (${err?.message ?? "erreur réseau"}). La commande a bien été traitée côté client.`
       );
       setSubmitState("error");
-      clearCart(); // client already has the PDF
+      clearCart();
     }
   }
 
