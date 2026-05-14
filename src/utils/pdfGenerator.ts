@@ -85,12 +85,15 @@ function buildDoc(opts: PdfOptions): jsPDF {
 
   if (opts.isProClient && opts.proClientName) {
     const badgeY = opts.clientEmail ? 90 : 84;
-    doc.setFillColor(green);
-    doc.roundedRect(14, badgeY - 5, 60, 8, 2, 2, "F");
-    doc.setTextColor("#FFFFFF");
+    const badgeLabel = `Compte Pro : ${opts.proClientName}`;
+    // measure text width to size the badge correctly
     doc.setFont("helvetica", "bold");
     doc.setFontSize(8);
-    doc.text(`✓ Compte Pro : ${opts.proClientName}`, 17, badgeY);
+    const textWidth = doc.getTextWidth(badgeLabel) + 8;
+    doc.setFillColor(green);
+    doc.roundedRect(14, badgeY - 5, textWidth, 8, 2, 2, "F");
+    doc.setTextColor("#FFFFFF");
+    doc.text(badgeLabel, 17, badgeY);
   }
 
   // ── Items table ────────────────────────────────────────────────────────────
