@@ -6,7 +6,7 @@ import {
   CheckCircle, Loader2, AlertCircle,
 } from "lucide-react";
 import { useApp } from "../context/AppContext";
-import { generatePDF } from "../utils/pdfGenerator";
+import { generatePDF, generatePDFBlob } from "../utils/pdfGenerator";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -50,21 +50,43 @@ export default function CheckoutModal() {
 
     const orderRef = generateOrderRef();
 
-    // 1. Build Discord embed
+    // Shared PDF options (prices always visible for the with-prices copy)
+    const basePdfOpts = {
+      orderRef,
+      clientName:    name.trim(),
+      clientPhone:   phone.trim(),
+      clientEmail:   email.trim() || undefined,
+      isProClient:   !!activeProClient,
+      proClientName: activeProClient?.name,
+      items: cart.map((item) => ({
+        name:       item.name,
+        quantity:   item.quantity,
+        unitPrice:  item.effectivePrice,
+        totalPrice: item.effectivePrice * item.quantity,
+      })),
+      orderTotal,
+    };
+
+    // 1. Build both PDF blobs for Discord (always with + without prices)
+    const pdfWithPrices    = generatePDFBlob({ ...basePdfOpts, withPrices: true });
+    const pdfWithoutPrices = generatePDFBlob({ ...basePdfOpts, withPrices: false });
+
+    // 2. Build Discord embed
     const itemsText = cart
-      .map((item) =>
-        `> **${item.name}** — ×${item.quantity} — ${(item.effectivePrice * item.quantity).toFixed(2)} €`
+      .map(
+        (item) =>
+          `> **${item.name}** — ×${item.quantity} — ${(item.effectivePrice * item.quantity).toFixed(2)} €`
       )
       .join("\n");
 
-    const discordBody = {
+    const discordEmbed = {
       embeds: [
         {
           title: `🛒 Nouvelle Commande — #${orderRef}`,
           color: 0xe31e24,
           fields: [
-            { name: "👤 Client",    value: name.trim(),        inline: true },
-            { name: "📞 Téléphone", value: phone.trim(),       inline: true },
+            { name: "👤 Client",    value: name.trim(),         inline: true },
+            { name: "📞 Téléphone", value: phone.trim(),        inline: true },
             { name: "📧 Email",     value: email.trim() || "—", inline: true },
             {
               name:  activeProClient ? "⭐ Compte Pro" : "👤 Type client",
@@ -73,6 +95,7 @@ export default function CheckoutModal() {
             },
             { name: "🧾 Articles commandés", value: itemsText,                        inline: false },
             { name: "💰 Total",              value: `**${orderTotal.toFixed(2)} €**`, inline: false },
+            { name: "📎 Pièces jointes",     value: "Bon avec prix (file 1) · Bon sans prix (file 2)", inline: false },
           ],
           footer: {
             text: `Express Food • ${new Date().toLocaleDateString("fr-FR", {
@@ -83,65 +106,43 @@ export default function CheckoutModal() {
       ],
     };
 
-    // 2. POST to Vercel API route FIRST — before any file download
+    // 3. Send to Discord via multipart (embed + two PDF attachments)
     try {
-      const res = await fetch("/api/notify", {
-        method:  "POST",
-        headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify(discordBody),
+      const form = new FormData();
+      form.append("payload_json", JSON.stringify(discordEmbed));
+      form.append(
+        "files[0]",
+        pdfWithPrices,
+        `commande_EF-${orderRef}_avec-prix.pdf`
+      );
+      form.append(
+        "files[1]",
+        pdfWithoutPrices,
+        `commande_EF-${orderRef}_sans-prix.pdf`
+      );
+
+      const res = await fetch("/api/notify-multipart", {
+        method: "POST",
+        body:   form,
       });
 
-      if (!res.ok) {
-        throw new Error(`HTTP ${res.status}`);
-      }
-
-      // 3. Discord succeeded — NOW trigger the PDF download
-      //    (iOS Safari won't interrupt a completed fetch)
-      generatePDF({
-        orderRef,
-        clientName:    name.trim(),
-        clientPhone:   phone.trim(),
-        clientEmail:   email.trim() || undefined,
-        isProClient:   !!activeProClient,
-        proClientName: activeProClient?.name,
-        items: cart.map((item) => ({
-          name:       item.name,
-          quantity:   item.quantity,
-          unitPrice:  item.effectivePrice,
-          totalPrice: item.effectivePrice * item.quantity,
-        })),
-        orderTotal,
-      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
       setSubmitState("success");
-      clearCart();
-
     } catch (err: any) {
       console.error("[Discord] notification failed:", err);
-
-      // 4. Even if Discord fails, still give the client their PDF
-      generatePDF({
-        orderRef,
-        clientName:    name.trim(),
-        clientPhone:   phone.trim(),
-        clientEmail:   email.trim() || undefined,
-        isProClient:   !!activeProClient,
-        proClientName: activeProClient?.name,
-        items: cart.map((item) => ({
-          name:       item.name,
-          quantity:   item.quantity,
-          unitPrice:  item.effectivePrice,
-          totalPrice: item.effectivePrice * item.quantity,
-        })),
-        orderTotal,
-      });
-
       setWebhookError(
         `Notification Discord échouée (${err?.message ?? "erreur réseau"}). La commande a bien été traitée côté client.`
       );
       setSubmitState("error");
-      clearCart();
     }
+
+    // 4. Download the right PDF for the client:
+    //    - Normal client → with prices
+    //    - Pro client    → without prices
+    generatePDF({ ...basePdfOpts, withPrices: !activeProClient });
+
+    clearCart();
   }
 
   function handleClose() {
@@ -308,7 +309,7 @@ export default function CheckoutModal() {
               style={{ backgroundColor: "#2D8A2D15", color: "#2D8A2D" }}
             >
               <CheckCircle className="w-4 h-4" />
-              Compte Pro actif : {activeProClient.name}
+              Compte Pro actif : {activeProClient.name} — votre PDF ne contiendra pas les prix.
             </div>
           )}
 

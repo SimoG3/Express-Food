@@ -1,0 +1,4215 @@
+This file is a merged representation of the entire codebase, combined into a single document by Repomix.
+
+<file_summary>
+This section contains a summary of this file.
+
+<purpose>
+This file contains a packed representation of the entire repository's contents.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+</purpose>
+
+<file_format>
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Repository files (if enabled)
+5. Multiple file entries, each consisting of:
+  - File path as an attribute
+  - Full contents of the file
+</file_format>
+
+<usage_guidelines>
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+</usage_guidelines>
+
+<notes>
+- Some files may have been excluded based on .gitignore rules and Repomix's configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+- Files are sorted by Git change count (files with more changes are at the bottom)
+</notes>
+
+</file_summary>
+
+<directory_structure>
+.gitignore
+api/notify.ts
+index.html
+package.json
+postcss.config.js
+public/favicon.svg
+README.md
+src/App.tsx
+src/components/CartSidebar.tsx
+src/components/CheckoutModal.tsx
+src/components/FilterSidebar.tsx
+src/components/Footer.tsx
+src/components/Header.tsx
+src/components/Logo.tsx
+src/components/NewsletterSection.tsx
+src/components/ProductCard.tsx
+src/components/ProLoginModal.tsx
+src/components/ProWelcomeBanner.tsx
+src/components/SafeImage.tsx
+src/components/TrustBanner.tsx
+src/context/AppContext.tsx
+src/data/constants.ts
+src/data/products.ts
+src/index.css
+src/main.tsx
+src/pages/AdminDashboard.tsx
+src/pages/AdminLogin.tsx
+src/pages/HomePage.tsx
+src/pages/ProductsPage.tsx
+src/types/index.ts
+src/utils/pdfGenerator.ts
+src/utils/webhookService.ts
+tailwind.config.js
+tsconfig.json
+tsconfig.node.json
+vercel.json
+vite.config.ts
+</directory_structure>
+
+<files>
+This section contains the contents of the repository's files.
+
+<file path="api/notify.ts">
+// api/notify.ts
+import type { VercelRequest, VercelResponse } from '@vercel/node';
+
+const DISCORD_WEBHOOK_URL = process.env.DISCORD_WEBHOOK_URL!;
+
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  if (req.method !== 'POST') return res.status(405).end();
+
+  try {
+    const response = await fetch(DISCORD_WEBHOOK_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(req.body),
+    });
+
+    if (!response.ok) {
+      return res.status(response.status).json({ error: 'Discord error' });
+    }
+
+    return res.status(200).json({ ok: true });
+  } catch (err) {
+    return res.status(500).json({ error: 'Internal error' });
+  }
+}
+</file>
+
+<file path="index.html">
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Express Food — Livraison Express à domicile</title>
+    <meta name="description" content="Express Food : livraison express de courses fraîches à domicile. Fraîcheur garantie, livraison en 30 min."/>
+    <meta name="theme-color" content="#E31E24"/>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+</file>
+
+<file path="postcss.config.js">
+export default {
+  plugins: {
+    tailwindcss: {},
+    autoprefixer: {},
+  },
+}
+</file>
+
+<file path="public/favicon.svg">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <rect width="32" height="32" rx="3" fill="#111111"/>
+  <!-- Speed lines -->
+  <line x1="1" y1="11" x2="8" y2="11" stroke="#E31E24" stroke-width="2" stroke-linecap="round"/>
+  <line x1="2" y1="15" x2="7" y2="15" stroke="#E31E24" stroke-width="1.5" stroke-linecap="round"/>
+  <!-- Red arc top -->
+  <path d="M8 16 A10 10 0 0 1 28 16" stroke="#E31E24" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <!-- Green diamond -->
+  <polygon points="16,6 28,16 16,26 12,16" fill="#2D8A2D"/>
+  <!-- Car body -->
+  <rect x="13" y="17" width="13" height="6" rx="1.5" fill="#111111"/>
+  <rect x="15" y="13" width="8" height="5" rx="1" fill="#111111"/>
+  <rect x="15.5" y="13.5" width="7" height="3.5" rx="0.8" fill="#2D8A2D" opacity="0.7"/>
+  <!-- Wheels -->
+  <circle cx="15.5" cy="24" r="2.5" fill="#111" stroke="#E31E24" stroke-width="1"/>
+  <circle cx="15.5" cy="24" r="1" fill="#E31E24"/>
+  <circle cx="23.5" cy="24" r="2.5" fill="#111" stroke="#E31E24" stroke-width="1"/>
+  <circle cx="23.5" cy="24" r="1" fill="#E31E24"/>
+  <!-- Arc bottom dashed -->
+  <path d="M8 16 A10 10 0 0 0 28 16" stroke="#E31E24" stroke-width="1.5" fill="none" stroke-dasharray="2 2"/>
+</svg>
+</file>
+
+<file path="README.md">
+# Express Food — B2B Professional Grocery Portal
+
+**Stack:** React 18 · TypeScript · Vite 5 · Tailwind CSS 3  
+**Brand:** Red `#E31E24` · Green `#2D8A2D` · Dark `#111111`
+
+---
+
+## Setup
+
+```bash
+npm install     # installs all deps incl. jspdf + jspdf-autotable
+npm run dev     # http://localhost:5173
+npm run build   # production bundle → dist/
+```
+
+---
+
+## Configuration (`src/data/constants.ts`)
+
+| Key | Default | Purpose |
+|---|---|---|
+| `WHATSAPP_ADMIN` | `33745461870` | WhatsApp number for order alerts |
+| `SHOPIFY_STORE`  | `your-store-name` | Shopify sub-domain |
+| `ADMIN_PASSWORD` | `ENSA_Grocery2024!` | Admin dashboard password |
+
+Change the WhatsApp number → **`+33 7 45 46 18 70`** is pre-configured.
+
+---
+
+## Routes
+
+| URL | Page |
+|---|---|
+| `/` or `/#` | Home page |
+| `/#products` | Product catalogue with filters |
+| `/#281938821` | Admin dashboard (password protected) |
+
+---
+
+## Demo Pro Clients
+
+| Name | Code |
+|---|---|
+| Restaurant Le Marrakchi | `123456` |
+| Hôtel Atlas Asni | `654321` |
+
+---
+
+## Feature Map
+
+```
+src/
+├── context/AppContext.tsx      Global state: products, cart, pro clients, search, modals
+│
+├── components/
+│   ├── Header.tsx              Dark sticky header · functional search · zone selector · Pro button
+│   ├── Logo.tsx                SVG Express Food logo (dark + light variants)
+│   ├── ProductCard.tsx         Inline qty stepper · pro price badge · discount badge
+│   ├── FilterSidebar.tsx       Category filter · dual price sliders · on-sale toggle
+│   ├── CartSidebar.tsx         Slide-in cart drawer → opens CheckoutModal
+│   ├── CheckoutModal.tsx       Name/Phone/Email form → PDF download + WhatsApp notify
+│   ├── ProLoginModal.tsx       6-digit access code gate for pro clients
+│   ├── ProWelcomeBanner.tsx    Dark welcome strip shown when pro is active
+│   ├── TrustBanner.tsx         4-column logistics strip (Express 30min, Delivery, Secure, Fresh)
+│   ├── NewsletterSection.tsx   Email capture with validation + success state
+│   └── Footer.tsx              Dark footer · pro access shortcut · WhatsApp link
+│
+├── pages/
+│   ├── HomePage.tsx            Dark hero · TrustBanner · Pro sections · 3 Catalogues · Category rows
+│   ├── ProductsPage.tsx        Sidebar + product grid · real-time search/sort/filter
+│   ├── AdminLogin.tsx          Password gate with show/hide toggle
+│   └── AdminDashboard.tsx      Products CRUD · Pro Clients tab · Price Override matrix
+│
+└── utils/pdfGenerator.ts       jsPDF receipt with Express Food branding (red/green/dark)
+```
+
+---
+
+## PDF Order Receipt
+
+Generated on every checkout:
+- Express Food header (red/green stripes)
+- Order reference box with `#EF-XXXXX` ID
+- Client details + optional Pro badge
+- Itemised table with pro-overridden prices
+- Red total footer row
+- Green divider + contact footer
+- Auto-downloaded as `commande_EF-XXXXX.pdf`
+
+---
+
+## WhatsApp Integration
+
+After PDF download, a pre-filled WhatsApp message opens to **+33 7 45 46 18 70** containing:
+- Order reference
+- Client name + pro account
+- Itemised product list
+- Total amount
+
+---
+
+## Reset Seed Data
+
+```js
+// Browser console
+localStorage.clear();
+location.reload();
+```
+</file>
+
+<file path="src/App.tsx">
+import { AppProvider, useApp } from './context/AppContext';
+import Header            from './components/Header';
+import CartSidebar       from './components/CartSidebar';
+import CheckoutModal     from './components/CheckoutModal';
+import ProLoginModal     from './components/ProLoginModal';
+import ProWelcomeBanner  from './components/ProWelcomeBanner';
+import Footer            from './components/Footer';
+import NewsletterSection from './components/NewsletterSection';
+import HomePage          from './pages/HomePage';
+import ProductsPage      from './pages/ProductsPage';
+import AdminLogin        from './pages/AdminLogin';
+import AdminDashboard    from './pages/AdminDashboard';
+
+// ── Inner shell (needs context access) ───────────────────────────────────────
+function AppContent() {
+  const { page, adminAuth } = useApp();
+
+  // Admin is a completely standalone route — no shared layout
+  if (page === 'admin') {
+    return adminAuth ? <AdminDashboard /> : <AdminLogin />;
+  }
+
+  return (
+    <div className="min-h-screen flex flex-col">
+      {/* ── Global modals / drawers (always mounted) ───────────────── */}
+      <ProLoginModal />
+      <CheckoutModal />
+      <CartSidebar />
+
+      {/* ── Pro client welcome banner (renders only when logged in) ─── */}
+      <ProWelcomeBanner />
+
+      {/* ── Sticky site header ─────────────────────────────────────── */}
+      <Header />
+
+      {/* ── Page content ───────────────────────────────────────────── */}
+      <main className="flex-1">
+        {page === 'home'     && <HomePage />}
+        {page === 'products' && <ProductsPage />}
+      </main>
+
+      {/* ── Footer ─────────────────────────────────────────────────── */}
+      <NewsletterSection />
+      <Footer />
+    </div>
+  );
+}
+
+// ── Root ─────────────────────────────────────────────────────────────────────
+export default function App() {
+  return (
+    <AppProvider>
+      <AppContent />
+    </AppProvider>
+  );
+}
+</file>
+
+<file path="src/components/CartSidebar.tsx">
+import { ShoppingCart, X, Plus, Minus, Trash2 } from 'lucide-react';
+import { useApp } from '../context/AppContext';
+import SafeImage from './SafeImage';
+import { COLOR } from '../data/constants';
+
+export default function CartSidebar() {
+  const { cart, cartOpen, setCartOpen, cartTotal, updateQty,
+          removeFromCart, clearCart, setCheckoutOpen } = useApp();
+
+  if (!cartOpen) return null;
+  const totalItems = cart.reduce((s, i) => s + i.quantity, 0);
+  const openCheckout = () => { setCartOpen(false); setCheckoutOpen(true); };
+
+  return (
+    <>
+      <div className="fixed inset-0 z-40 bg-black bg-opacity-60" onClick={() => setCartOpen(false)} />
+      <aside className="fixed right-0 top-0 h-full w-full sm:w-96 bg-white z-50 flex flex-col shadow-2xl">
+
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 py-3 text-white flex-shrink-0"
+          style={{ background: COLOR.dark, borderBottom: `3px solid ${COLOR.red}` }}>
+          <div className="flex items-center gap-2 font-bold">
+            <ShoppingCart size={18} />
+            <span>Mon Panier</span>
+            {totalItems > 0 && (
+              <span className="text-xs rounded-full px-2 py-0.5 font-black"
+                style={{ background: COLOR.red }}>{totalItems}</span>
+            )}
+          </div>
+          <button onClick={() => setCartOpen(false)}><X size={20} /></button>
+        </div>
+
+        {/* Items */}
+        <div className="flex-1 overflow-y-auto p-4">
+          {cart.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-full text-center py-12">
+              <ShoppingCart size={52} style={{ color: COLOR.border }} className="mb-4" />
+              <p className="font-black text-gray-400 text-lg">Votre panier est vide</p>
+              <button onClick={() => setCartOpen(false)}
+                className="mt-5 text-sm font-bold px-5 py-2 rounded-sm text-white"
+                style={{ background: COLOR.red }}>
+                Continuer mes achats
+              </button>
+            </div>
+          ) : (
+            <ul className="flex flex-col gap-3">
+              {cart.map(item => (
+                <li key={item.id} className="flex gap-3 border rounded-sm p-3"
+                  style={{ borderColor: COLOR.border }}>
+                  <SafeImage src={item.image} alt={item.name} fallbackText={item.name}
+                    className="w-16 h-16 object-cover rounded-sm border flex-shrink-0"
+                    style={{ borderColor: COLOR.border }} />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-gray-800 leading-snug truncate">{item.name}</p>
+                    <p className="text-xs text-gray-400 mb-2">{item.unit}</p>
+                    <div className="flex items-center gap-2">
+                      <button onClick={() => updateQty(item.id, item.quantity - 1)}
+                        className="w-6 h-6 border flex items-center justify-center rounded-sm"
+                        style={{ borderColor: COLOR.border }}>
+                        <Minus size={11} className="text-gray-600" />
+                      </button>
+                      <span className="text-sm font-black w-5 text-center tabular-nums"
+                        style={{ color: COLOR.red }}>{item.quantity}</span>
+                      <button onClick={() => updateQty(item.id, item.quantity + 1)}
+                        className="w-6 h-6 text-white flex items-center justify-center rounded-sm"
+                        style={{ background: COLOR.red }}>
+                        <Plus size={11} />
+                      </button>
+                    </div>
+                  </div>
+                  <div className="flex flex-col items-end justify-between flex-shrink-0">
+                    <button onClick={() => removeFromCart(item.id)}
+                      className="text-gray-300 hover:text-red-500"><Trash2 size={15} /></button>
+                    <span className="font-black text-sm" style={{ color: COLOR.red }}>
+                      {(item.effectivePrice * item.quantity).toFixed(2)} €
+                    </span>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+        {/* Footer */}
+        {cart.length > 0 && (
+          <div className="flex-shrink-0 border-t p-4" style={{ borderColor: COLOR.border }}>
+            <div className="flex justify-between items-center mb-1">
+              <span className="text-sm text-gray-500">Total ({totalItems} art.)</span>
+              <span className="font-black text-xl" style={{ color: COLOR.red }}>{cartTotal.toFixed(2)} €</span>
+            </div>
+            <p className="text-xs text-gray-400 mb-3">Livraison calculée à l'étape suivante</p>
+            <button onClick={openCheckout}
+              className="w-full text-white font-black py-3 rounded-sm text-sm mb-2"
+              style={{ background: COLOR.red }}>
+              Valider la commande →
+            </button>
+            <button onClick={clearCart} className="w-full text-gray-400 text-xs py-1 hover:text-red-500">
+              Vider le panier
+            </button>
+          </div>
+        )}
+      </aside>
+    </>
+  );
+}
+</file>
+
+<file path="src/components/FilterSidebar.tsx">
+import { useId } from 'react';
+import { ALL_CATEGORIES, CAT_ICON, COLOR, PRODUCT_CATEGORIES } from '../data/constants';
+import type { PriceRange, Product } from '../types';
+
+interface Props {
+  products:       Product[];
+  selectedCat:    string;
+  setSelectedCat: (c: string) => void;
+  priceRange:     PriceRange;
+  setPriceRange:  (r: PriceRange) => void;
+  onSaleOnly:     boolean;
+  setOnSaleOnly:  (v: boolean) => void;
+  maxPrice:       number;
+}
+
+function SectionHead({ label }: { label: string }) {
+  return (
+    <div className="px-3 py-2.5 font-black text-white text-xs tracking-widest uppercase"
+      style={{ background: COLOR.dark }}>
+      {label}
+    </div>
+  );
+}
+
+function Toggle({ id, checked, onChange }: {
+  id: string; checked: boolean; onChange: (v: boolean) => void;
+}) {
+  return (
+    <button id={id} role="switch" aria-checked={checked} onClick={() => onChange(!checked)}
+      className="relative w-10 h-5 rounded-full border-2 flex-shrink-0"
+      style={{
+        background:  checked ? COLOR.red : '#d1d5db',
+        borderColor: checked ? COLOR.red : '#d1d5db',
+      }}>
+      <span className="absolute top-0.5 w-3.5 h-3.5 bg-white rounded-full shadow"
+        style={{ left: checked ? 'calc(100% - 16px)' : '1px' }} />
+    </button>
+  );
+}
+
+export default function FilterSidebar({
+  products, selectedCat, setSelectedCat,
+  priceRange, setPriceRange, onSaleOnly, setOnSaleOnly, maxPrice,
+}: Props) {
+  const uid = useId();
+
+  const counts: Record<string, number> = {};
+  ALL_CATEGORIES.forEach(c => {
+    counts[c] = c === 'All' ? products.length : products.filter(p => p.category === c).length;
+  });
+
+  const presets: { label: string; val: PriceRange }[] = [
+    { label: '< 2 €',    val: [0, 2]         },
+    { label: '2–5 €',    val: [2, 5]         },
+    { label: '5–10 €',   val: [5, 10]        },
+    { label: '> 10 €',   val: [10, maxPrice] },
+  ];
+
+  const activePreset = presets.find(p => p.val[0] === priceRange[0] && p.val[1] === priceRange[1]);
+
+  return (
+    <aside className="w-52 flex-shrink-0 hidden md:flex flex-col gap-4">
+
+      {/* ── Categories ───────────────────────────────────────────────── */}
+      <div className="border rounded-sm overflow-hidden" style={{ borderColor: COLOR.border }}>
+        <SectionHead label="Catégories" />
+
+        {/* All */}
+        <button onClick={() => setSelectedCat('All')}
+          className="w-full text-left px-3 py-2.5 text-sm flex items-center justify-between border-b"
+          style={{
+            borderColor: '#f0f0f0',
+            background:  selectedCat === 'All' ? '#fff0f0' : 'white',
+            color:       selectedCat === 'All' ? COLOR.red  : '#444',
+            fontWeight:  selectedCat === 'All' ? 700 : 400,
+          }}>
+          <span>Tous les produits</span>
+          <span className="text-xs rounded-full px-1.5 py-0.5 leading-none font-semibold"
+            style={{
+              background: selectedCat === 'All' ? COLOR.red : '#ebebeb',
+              color:      selectedCat === 'All' ? 'white'   : '#777',
+            }}>
+            {counts['All']}
+          </span>
+        </button>
+
+        {/* Individual */}
+        {PRODUCT_CATEGORIES.map((cat, idx) => (
+          <button key={cat} onClick={() => setSelectedCat(cat)}
+            className={`w-full text-left px-3 py-2.5 text-sm flex items-center justify-between ${
+              idx < PRODUCT_CATEGORIES.length - 1 ? 'border-b' : ''
+            }`}
+            style={{
+              borderColor: '#f0f0f0',
+              background:  selectedCat === cat ? '#fff0f0' : 'white',
+              color:       selectedCat === cat ? COLOR.red  : '#444',
+              fontWeight:  selectedCat === cat ? 700 : 400,
+            }}>
+            <span>{CAT_ICON[cat] ? `${CAT_ICON[cat]} ` : ''}{cat}</span>
+            <span className="text-xs rounded-full px-1.5 py-0.5 leading-none font-semibold"
+              style={{
+                background: selectedCat === cat ? COLOR.red : '#ebebeb',
+                color:      selectedCat === cat ? 'white'   : '#777',
+              }}>
+              {counts[cat] ?? 0}
+            </span>
+          </button>
+        ))}
+      </div>
+
+      {/* ── Price range ───────────────────────────────────────────────── */}
+      <div className="border rounded-sm overflow-hidden" style={{ borderColor: COLOR.border }}>
+        <SectionHead label="Prix" />
+        <div className="p-4 bg-white flex flex-col gap-3">
+
+          {/* Range display */}
+          <div className="flex justify-between items-center">
+            <span className="text-sm font-black tabular-nums" style={{ color: COLOR.red }}>
+              {priceRange[0].toFixed(2)} €
+            </span>
+            <div className="flex-1 h-px mx-2" style={{ background: COLOR.border }} />
+            <span className="text-sm font-black tabular-nums" style={{ color: COLOR.red }}>
+              {priceRange[1] >= maxPrice ? `${maxPrice.toFixed(2)} €+` : `${priceRange[1].toFixed(2)} €`}
+            </span>
+          </div>
+
+          {/* Min slider */}
+          <div>
+            <div className="flex justify-between text-xs text-gray-400 mb-1">
+              <label htmlFor={`${uid}-min`}>Min</label>
+              <span>{priceRange[0].toFixed(2)} €</span>
+            </div>
+            <input id={`${uid}-min`} type="range" min={0} max={maxPrice} step={0.5}
+              value={priceRange[0]}
+              onChange={e => {
+                const v = Number(e.target.value);
+                if (v < priceRange[1]) setPriceRange([v, priceRange[1]]);
+              }}
+              className="w-full h-1.5 cursor-pointer rounded-full appearance-none"
+              style={{ accentColor: COLOR.red }}
+            />
+          </div>
+
+          {/* Max slider */}
+          <div>
+            <div className="flex justify-between text-xs text-gray-400 mb-1">
+              <label htmlFor={`${uid}-max`}>Max</label>
+              <span>{priceRange[1].toFixed(2)} €</span>
+            </div>
+            <input id={`${uid}-max`} type="range" min={0} max={maxPrice} step={0.5}
+              value={priceRange[1]}
+              onChange={e => {
+                const v = Number(e.target.value);
+                if (v > priceRange[0]) setPriceRange([priceRange[0], v]);
+              }}
+              className="w-full h-1.5 cursor-pointer rounded-full appearance-none"
+              style={{ accentColor: COLOR.red }}
+            />
+          </div>
+
+          {/* Quick presets */}
+          <div className="grid grid-cols-2 gap-1.5 pt-1">
+            {presets.map(p => {
+              const active = activePreset?.label === p.label;
+              return (
+                <button key={p.label} onClick={() => setPriceRange(p.val)}
+                  className="text-xs py-1.5 rounded-sm border font-semibold"
+                  style={{
+                    borderColor: active ? COLOR.red   : COLOR.border,
+                    background:  active ? COLOR.red   : 'white',
+                    color:       active ? 'white' : '#555',
+                  }}>
+                  {p.label}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Reset price */}
+          {(priceRange[0] > 0 || priceRange[1] < maxPrice) && (
+            <button onClick={() => setPriceRange([0, maxPrice])}
+              className="text-xs text-center underline"
+              style={{ color: COLOR.green }}>
+              Réinitialiser le prix
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* ── Availability ─────────────────────────────────────────────── */}
+      <div className="border rounded-sm overflow-hidden" style={{ borderColor: COLOR.border }}>
+        <SectionHead label="Filtres" />
+        <div className="bg-white divide-y" style={{ borderColor: '#f0f0f0' }}>
+
+          <div className="px-3 py-2.5 flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: COLOR.green }} />
+            <span className="text-sm text-gray-700 flex-1">En stock</span>
+            <span className="text-xs font-semibold text-gray-500">
+              {products.filter(p => p.inStock).length}
+            </span>
+          </div>
+
+          <div className="px-3 py-3 flex items-center justify-between gap-2">
+            <div>
+              <p className="text-sm font-semibold text-gray-700">Promotions uniquement</p>
+              <p className="text-xs text-gray-400">
+                {products.filter(p => !!p.discount).length} en promo
+              </p>
+            </div>
+            <Toggle id={`${uid}-sale`} checked={onSaleOnly} onChange={setOnSaleOnly} />
+          </div>
+
+          <div className="px-3 py-2.5 flex items-center gap-2">
+            <div className="w-2 h-2 rounded-sm flex-shrink-0" style={{ background: '#7c3aed' }} />
+            <span className="text-sm text-gray-700 flex-1">Nouveautés</span>
+            <span className="text-xs font-semibold text-gray-500">
+              {products.filter(p => p.isNew).length}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Reset all ─────────────────────────────────────────────────── */}
+      <button
+        onClick={() => { setSelectedCat('All'); setPriceRange([0, maxPrice]); setOnSaleOnly(false); }}
+        className="text-xs font-semibold text-center py-2.5 rounded-sm border"
+        style={{ borderColor: COLOR.border, color: COLOR.red, background: 'white' }}>
+        ↺ Réinitialiser tous les filtres
+      </button>
+    </aside>
+  );
+}
+</file>
+
+<file path="src/components/Header.tsx">
+import { useState, useRef, useEffect } from 'react';
+import { ShoppingCart, Search, ChevronDown, Menu, X, Building2 } from 'lucide-react';
+import { useApp } from '../context/AppContext';
+import { COLOR, PRODUCT_CATEGORIES, CAT_ICON, DRIVE_STORES } from '../data/constants';
+import Logo from './Logo';
+
+export default function Header() {
+  const { cartCount, setCartOpen, navigate, submitSearch, searchQuery,
+          setProLoginOpen, activeProClient } = useApp();
+
+  const [localSearch, setLocalSearch] = useState(searchQuery);
+  const [zone,        setZone]        = useState(DRIVE_STORES[0]);
+  const [zoneOpen,    setZoneOpen]    = useState(false);
+  const [mobileOpen,  setMobileOpen]  = useState(false);
+  const zoneRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => { setLocalSearch(searchQuery); }, [searchQuery]);
+
+  useEffect(() => {
+    const h = (e: MouseEvent) => {
+      if (zoneRef.current && !zoneRef.current.contains(e.target as Node)) setZoneOpen(false);
+    };
+    document.addEventListener('mousedown', h);
+    return () => document.removeEventListener('mousedown', h);
+  }, []);
+
+  const handleSearch = () => { if (localSearch.trim()) submitSearch(localSearch.trim()); };
+  const clearSearch  = () => { setLocalSearch(''); submitSearch(''); };
+
+  return (
+    <header style={{ background: COLOR.dark }} className="sticky top-0 z-30">
+
+      {/* ── Announcement ───────────────────────────────────────────── */}
+      <div style={{ background: COLOR.darkBg, fontSize: '11px' }}
+        className="text-gray-400 py-1 px-4 text-center hidden sm:block">
+        🚗&nbsp;
+        <span style={{ color: COLOR.red }}>Livraison Express</span>
+        &nbsp;·&nbsp;Commande avant 14h → livrée le jour même&nbsp;·&nbsp;
+        <span style={{ color: COLOR.green }}>Fraîcheur garantie</span>
+      </div>
+
+      {/* ── Main row ─────────────────────────────────────────────────── */}
+      <div className="max-w-7xl mx-auto px-4 py-3 flex items-center gap-3">
+
+        {/* Logo */}
+        <button onClick={() => navigate('home')} aria-label="Accueil" className="flex-shrink-0">
+          <Logo size={38} />
+        </button>
+
+        {/* Zone selector */}
+        <div ref={zoneRef} className="relative hidden md:block flex-shrink-0">
+          <button
+            onClick={() => setZoneOpen(v => !v)}
+            className="flex items-center gap-2 text-gray-300 text-xs border px-3 py-2 rounded-sm"
+            style={{ background: 'rgba(255,255,255,.07)', borderColor: 'rgba(255,255,255,.15)' }}
+          >
+            <span>📍</span>
+            <span className="font-medium max-w-36 truncate">{zone}</span>
+            <ChevronDown size={12} />
+          </button>
+          {zoneOpen && (
+            <div className="absolute top-full left-0 mt-1 bg-white border shadow-2xl z-50 w-52 rounded-sm"
+              style={{ borderColor: COLOR.border }}>
+              {DRIVE_STORES.map(s => (
+                <button key={s} onClick={() => { setZone(s); setZoneOpen(false); }}
+                  className="block w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 border-b last:border-0"
+                  style={{ borderColor: '#f0f0f0' }}>
+                  📍 {s}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* ── Search bar ─────────────────────────────────────────────── */}
+        <div className="flex-1 flex min-w-0">
+          <input
+            type="text"
+            value={localSearch}
+            onChange={e => setLocalSearch(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter') handleSearch(); if (e.key === 'Escape') clearSearch(); }}
+            placeholder="Rechercher un produit, une catégorie…"
+            className="flex-1 min-w-0 pl-4 pr-3 py-2.5 text-sm rounded-l-sm focus:outline-none border-0"
+            style={{ color: '#111', background: 'white' }}
+          />
+          {localSearch && (
+            <button onClick={clearSearch}
+              className="px-2 py-2.5 bg-white text-gray-400 hover:text-gray-600 border-l"
+              style={{ borderColor: '#e5e5e5' }}>
+              <X size={14} />
+            </button>
+          )}
+          <button onClick={handleSearch}
+            className="flex-shrink-0 px-4 py-2.5 rounded-r-sm font-bold text-white text-sm"
+            style={{ background: COLOR.red }}>
+            <Search size={17} />
+          </button>
+        </div>
+
+        {/* Pro Access */}
+        <button
+          onClick={() => setProLoginOpen(true)}
+          className="hidden md:flex items-center gap-1.5 text-xs font-bold px-3 py-2 rounded-sm border flex-shrink-0"
+          style={{
+            background:  activeProClient ? COLOR.green : 'rgba(255,255,255,.08)',
+            borderColor: activeProClient ? COLOR.green  : 'rgba(255,255,255,.15)',
+            color:       'white',
+          }}
+          title={activeProClient ? activeProClient.name : 'Accès Professionnel'}
+        >
+          <Building2 size={14} />
+          <span className="hidden lg:inline">{activeProClient ? '★ Espace Pro' : 'Accès Pro'}</span>
+        </button>
+
+        {/* Cart */}
+        <button onClick={() => setCartOpen(true)}
+          className="flex items-center gap-2 text-white flex-shrink-0 relative"
+          aria-label="Panier">
+          <div className="relative">
+            <ShoppingCart size={24} />
+            {cartCount > 0 && (
+              <span className="absolute -top-2 -right-2 rounded-full w-5 h-5 text-white font-black flex items-center justify-center"
+                style={{ background: COLOR.red, fontSize: '10px' }}>
+                {cartCount > 99 ? '99+' : cartCount}
+              </span>
+            )}
+          </div>
+          <span className="hidden sm:block text-sm font-semibold">Panier</span>
+        </button>
+
+        {/* Mobile toggle */}
+        <button onClick={() => setMobileOpen(v => !v)} className="md:hidden text-white flex-shrink-0">
+          {mobileOpen ? <X size={22} /> : <Menu size={22} />}
+        </button>
+      </div>
+
+      {/* Mobile dropdown */}
+      {mobileOpen && (
+        <div className="md:hidden px-4 pb-3 flex flex-col gap-2"
+          style={{ background: COLOR.dark, borderTop: '1px solid rgba(255,255,255,.08)' }}>
+          <select value={zone} onChange={e => setZone(e.target.value)}
+            className="w-full text-sm px-3 py-2 rounded-sm text-white border-0"
+            style={{ background: 'rgba(255,255,255,.12)' }}>
+            {DRIVE_STORES.map(s => <option key={s} style={{ color: '#111' }}>{s}</option>)}
+          </select>
+          <button onClick={() => { setProLoginOpen(true); setMobileOpen(false); }}
+            className="flex items-center justify-center gap-2 text-white text-sm font-bold py-2.5 rounded-sm"
+            style={{ background: activeProClient ? COLOR.green : 'rgba(255,255,255,.12)' }}>
+            <Building2 size={14} />
+            {activeProClient ? `Pro : ${activeProClient.name}` : 'Accès Professionnel'}
+          </button>
+        </div>
+      )}
+
+      {/* ── Category nav ──────────────────────────────────────────────── */}
+      <nav style={{ background: COLOR.navBg, borderTop: '1px solid rgba(255,255,255,.06)' }}
+        aria-label="Catégories">
+        <div className="max-w-7xl mx-auto px-4 overflow-x-auto">
+          <div className="flex">
+            <button onClick={() => { submitSearch(''); navigate('products'); }}
+              className="flex-shrink-0 text-gray-300 text-xs font-black px-4 py-2.5 whitespace-nowrap border-r border-white border-opacity-10"
+              style={{ background: 'rgba(255,255,255,.06)' }}>
+              Tous
+            </button>
+            {PRODUCT_CATEGORIES.map(cat => (
+              <button key={cat} onClick={() => navigate('products')}
+                className="flex-shrink-0 text-gray-300 text-xs font-semibold px-4 py-2.5 whitespace-nowrap border-r border-white border-opacity-10 hover:text-white hover:bg-white hover:bg-opacity-10">
+                {CAT_ICON[cat]}&nbsp;{cat}
+              </button>
+            ))}
+          </div>
+        </div>
+      </nav>
+    </header>
+  );
+}
+</file>
+
+<file path="src/components/NewsletterSection.tsx">
+import { useState } from 'react';
+import { Mail, CheckCircle, AlertCircle } from 'lucide-react';
+import { COLOR, BRAND_NAME } from '../data/constants';
+
+export default function NewsletterSection() {
+  const [email,     setEmail]     = useState('');
+  const [submitted, setSubmitted] = useState(false);
+  const [error,     setError]     = useState('');
+
+  const isValid = (e: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e.trim());
+
+  const handleSubmit = () => {
+    if (!isValid(email)) { setError('Adresse e-mail invalide.'); return; }
+    setError(''); setSubmitted(true); setEmail('');
+  };
+
+  return (
+    <section className="py-10 px-4 border-t border-b"
+      style={{ background:'white', borderColor: COLOR.border }}>
+      <div className="max-w-2xl mx-auto text-center">
+
+        {/* Icon */}
+        <div className="inline-flex items-center justify-center w-12 h-12 rounded-sm mb-4"
+          style={{ background: COLOR.dark }}>
+          <Mail size={22} style={{ color: COLOR.red }} />
+        </div>
+
+        <h2 className="font-black text-2xl text-gray-800 mb-1">
+          Rejoignez le Club {BRAND_NAME}
+        </h2>
+        <p className="text-gray-500 text-sm mb-6 leading-relaxed">
+          Inscrivez-vous et économisez&nbsp;
+          <strong style={{ color: COLOR.red }}>10 € sur votre première commande.</strong>
+          <br />Offres exclusives, promotions flash et nouveautés dans votre boîte mail.
+        </p>
+
+        {submitted ? (
+          <div className="flex flex-col items-center gap-3">
+            <CheckCircle size={44} style={{ color: COLOR.green }} />
+            <p className="font-black text-gray-700 text-lg">Merci — votre coupon arrive !</p>
+            <p className="text-sm text-gray-400">Pensez à vérifier vos spams.</p>
+            <button onClick={() => setSubmitted(false)}
+              className="text-xs underline mt-1" style={{ color:'#9ca3af' }}>
+              Utiliser une autre adresse
+            </button>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center gap-2">
+            <div className="flex flex-col sm:flex-row gap-2 w-full max-w-md">
+              <input type="email" value={email}
+                onChange={e => { setEmail(e.target.value); setError(''); }}
+                onKeyDown={e => e.key === 'Enter' && handleSubmit()}
+                placeholder="votre@email.com"
+                className="flex-1 border px-4 py-2.5 text-sm rounded-sm focus:outline-none"
+                style={{ borderColor: error ? '#ef4444' : COLOR.border }} />
+              <button onClick={handleSubmit}
+                className="text-white font-black px-6 py-2.5 rounded-sm text-sm flex-shrink-0"
+                style={{ background: COLOR.red }}>
+                S'abonner
+              </button>
+            </div>
+            {error && (
+              <div className="flex items-center gap-1.5">
+                <AlertCircle size={13} className="text-red-400" />
+                <p className="text-red-500 text-xs">{error}</p>
+              </div>
+            )}
+            <p className="text-xs text-gray-300 mt-1">
+              Désinscription possible à tout moment. Politique de confidentialité.
+            </p>
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+</file>
+
+<file path="src/components/ProductCard.tsx">
+import { ShoppingCart, Minus, Plus, Tag, Sparkles } from 'lucide-react';
+import { useApp } from '../context/AppContext';
+import SafeImage from './SafeImage';
+import { COLOR } from '../data/constants';
+import type { Product } from '../types';
+
+export default function ProductCard({ product }: { product: Product }) {
+  const { cart, addToCart, updateQty, priceFor, effectivePrice, activeProClient } = useApp();
+  const item = cart.find(i => i.id === product.id);
+  const qty  = item?.quantity ?? 0;
+
+  const finalPrice  = effectivePrice(product);
+  const hasOverride = activeProClient && activeProClient.priceOverrides[product.id] !== undefined;
+  const hasDiscount = !activeProClient && !!product.discount;
+  const savings     = hasDiscount ? +(product.price - finalPrice).toFixed(2) : 0;
+
+  return (
+    <article className="bg-white border rounded-sm flex flex-col overflow-hidden"
+      style={{ borderColor: COLOR.border }}>
+
+      {/* Image */}
+      <div className="relative" style={{ paddingTop: '72%', background: '#f8f9fa' }}>
+        <SafeImage src={product.image} alt={product.name} fallbackText={product.name}
+          className="absolute inset-0 w-full h-full object-cover" />
+
+        {/* Badges */}
+        <div className="absolute top-2 left-2 z-10 flex flex-col gap-1">
+          {product.isNew && (
+            <span className="text-white font-black leading-none px-1.5 py-0.5 rounded-sm flex items-center gap-0.5"
+              style={{ background: '#7c3aed', fontSize: '9px' }}>
+              <Sparkles size={8} /> NOUVEAU
+            </span>
+          )}
+          {hasDiscount && (
+            <span className="text-white font-black leading-none px-1.5 py-0.5 rounded-sm"
+              style={{ background: COLOR.red, fontSize: '9px' }}>
+              -{product.discount}%
+            </span>
+          )}
+          {hasOverride && (
+            <span className="text-white font-black leading-none px-1.5 py-0.5 rounded-sm flex items-center gap-0.5"
+              style={{ background: COLOR.green, fontSize: '9px' }}>
+              <Tag size={8} /> PRO
+            </span>
+          )}
+        </div>
+
+        {!product.inStock && (
+          <div className="absolute inset-0 bg-white bg-opacity-80 flex items-center justify-center">
+            <span className="text-red-600 text-xs font-black border border-red-300 bg-white px-2 py-0.5">
+              RUPTURE
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* Info */}
+      <div className="p-3 flex flex-col flex-1 gap-1.5">
+        <p className="text-xs text-gray-400 leading-none">{product.category}</p>
+        <p className="text-sm font-semibold text-gray-800 leading-snug flex-1 line-clamp-2"
+          title={product.name}>{product.name}</p>
+        <p className="text-xs text-gray-400">{product.unit}</p>
+
+        {/* Price + action */}
+        <div className="flex items-end justify-between gap-1 mt-auto">
+          <div>
+            {hasDiscount && (
+              <div className="text-xs text-gray-400 line-through leading-none mb-0.5">
+                {product.price.toFixed(2)} €
+              </div>
+            )}
+            <div className="leading-none flex items-baseline gap-0.5">
+              <span className="font-black text-xl"
+                style={{ color: hasOverride ? COLOR.green : COLOR.red }}>
+                {finalPrice.toFixed(2)}
+              </span>
+              <span className="font-black text-sm"
+                style={{ color: hasOverride ? COLOR.green : COLOR.red }}>€</span>
+            </div>
+            {hasDiscount && savings > 0 && (
+              <div className="text-xs font-semibold leading-none mt-0.5" style={{ color: COLOR.green }}>
+                -{savings.toFixed(2)} €
+              </div>
+            )}
+          </div>
+
+          {product.inStock ? (
+            qty > 0 ? (
+              <div className="flex items-center gap-1.5">
+                <button onClick={() => updateQty(product.id, qty - 1)}
+                  className="w-7 h-7 border flex items-center justify-center rounded-sm"
+                  style={{ borderColor: COLOR.border }}>
+                  <Minus size={12} className="text-gray-600" />
+                </button>
+                <span className="text-sm font-black w-5 text-center tabular-nums"
+                  style={{ color: COLOR.red }}>{qty}</span>
+                <button onClick={() => updateQty(product.id, qty + 1)}
+                  className="w-7 h-7 text-white flex items-center justify-center rounded-sm"
+                  style={{ background: COLOR.red }}>
+                  <Plus size={12} />
+                </button>
+              </div>
+            ) : (
+              <button onClick={() => addToCart(product)}
+                className="flex items-center gap-1 text-white text-xs font-bold px-3 py-1.5 rounded-sm flex-shrink-0"
+                style={{ background: COLOR.green }}>
+                <ShoppingCart size={11} /> Ajouter
+              </button>
+            )
+          ) : (
+            <span className="text-xs font-semibold" style={{ color: COLOR.red }}>Indisponible</span>
+          )}
+        </div>
+      </div>
+    </article>
+  );
+}
+</file>
+
+<file path="src/components/ProLoginModal.tsx">
+import { useState } from 'react';
+import { X, Building2, ShieldCheck, AlertCircle } from 'lucide-react';
+import { useApp } from '../context/AppContext';
+import { COLOR, BRAND_NAME } from '../data/constants';
+
+export default function ProLoginModal() {
+  const { proLoginOpen, setProLoginOpen, loginProClient, activeProClient, logoutProClient } = useApp();
+  const [code,  setCode]  = useState('');
+  const [error, setError] = useState('');
+
+  if (!proLoginOpen) return null;
+
+  const handleSubmit = () => {
+    if (code.trim().length !== 6) { setError('Le code doit comporter 6 chiffres.'); return; }
+    if (!loginProClient(code.trim())) {
+      setError('Code invalide. Contactez votre commercial.'); setCode('');
+    } else { setCode(''); setError(''); }
+  };
+
+  const close = () => { setProLoginOpen(false); setCode(''); setError(''); };
+
+  return (
+    <>
+      <div className="fixed inset-0 z-50 bg-black bg-opacity-60" onClick={close} />
+      <div className="fixed z-50 top-1/2 left-1/2 w-full max-w-sm bg-white rounded-sm shadow-2xl"
+        style={{ transform:'translate(-50%,-50%)', borderTop:`4px solid ${COLOR.red}` }}>
+
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b"
+          style={{ borderColor: COLOR.border }}>
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-sm flex items-center justify-center"
+              style={{ background: COLOR.dark }}>
+              <Building2 size={16} style={{ color: COLOR.red }} />
+            </div>
+            <div>
+              <p className="font-black text-gray-800 text-sm leading-none">Accès Professionnel</p>
+              <p className="text-xs text-gray-400 mt-0.5">{BRAND_NAME} — Espace B2B</p>
+            </div>
+          </div>
+          <button onClick={close} className="text-gray-400 hover:text-gray-600"><X size={18} /></button>
+        </div>
+
+        <div className="p-5">
+          {activeProClient ? (
+            /* Already logged in */
+            <div>
+              <div className="flex items-center gap-3 p-3 rounded-sm mb-4"
+                style={{ background:'#f0faf0', border:`1px solid ${COLOR.green}30` }}>
+                <ShieldCheck size={20} style={{ color: COLOR.green }} />
+                <div>
+                  <p className="font-black text-sm" style={{ color: COLOR.green }}>Connecté :</p>
+                  <p className="text-sm text-gray-700 font-semibold">{activeProClient.name}</p>
+                  {activeProClient.company &&
+                    <p className="text-xs text-gray-500">{activeProClient.company}</p>}
+                </div>
+              </div>
+              <button onClick={() => { logoutProClient(); setProLoginOpen(false); }}
+                className="w-full border text-sm font-bold py-2.5 rounded-sm"
+                style={{ borderColor: '#fca5a5', color:'#ef4444' }}>
+                Se déconnecter du compte Pro
+              </button>
+            </div>
+          ) : (
+            /* Login form */
+            <div>
+              <p className="text-sm text-gray-600 mb-4 leading-relaxed">
+                Entrez votre <strong>code d'accès à 6 chiffres</strong> pour accéder
+                à vos tarifs professionnels et fonctionnalités dédiées.
+              </p>
+
+              <div className="mb-3">
+                <label className="text-xs font-black text-gray-500 uppercase tracking-wide block mb-1.5">
+                  Code d'Accès Pro
+                </label>
+                <input
+                  type="text" inputMode="numeric" maxLength={6}
+                  value={code}
+                  onChange={e => { setCode(e.target.value.replace(/\D/g, '')); setError(''); }}
+                  onKeyDown={e => e.key === 'Enter' && handleSubmit()}
+                  placeholder="_ _ _ _ _ _"
+                  className="w-full border px-4 py-3 text-2xl font-black tracking-widest text-center
+                             rounded-sm focus:outline-none"
+                  style={{ borderColor: error ? '#ef4444' : COLOR.border,
+                           color: COLOR.red, letterSpacing: '0.4em' }}
+                />
+                {error && (
+                  <div className="flex items-center gap-1.5 mt-2">
+                    <AlertCircle size={13} className="text-red-500 flex-shrink-0" />
+                    <p className="text-red-500 text-xs">{error}</p>
+                  </div>
+                )}
+              </div>
+
+              <button onClick={handleSubmit}
+                className="w-full text-white font-black py-2.5 rounded-sm text-sm mb-3"
+                style={{ background: code.length === 6 ? COLOR.red : '#94a3b8' }}>
+                Accéder à mon espace Pro
+              </button>
+
+              <p className="text-xs text-gray-400 text-center">
+                Code fourni par votre commercial {BRAND_NAME}.&nbsp;
+                <button className="underline" style={{ color: COLOR.green }}>
+                  Contactez-nous
+                </button>
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+    </>
+  );
+}
+</file>
+
+<file path="src/components/ProWelcomeBanner.tsx">
+import { Building2, LogOut, Clock, Tag } from 'lucide-react';
+import { useApp } from '../context/AppContext';
+import { COLOR } from '../data/constants';
+
+export default function ProWelcomeBanner() {
+  const { activeProClient, logoutProClient } = useApp();
+  if (!activeProClient) return null;
+
+  const overrideCount = Object.keys(activeProClient.priceOverrides).length;
+  const orderCount    = activeProClient.purchaseHistory.length;
+
+  return (
+    <div style={{ background: COLOR.dark, borderBottom: `2px solid ${COLOR.green}` }}>
+      <div className="max-w-7xl mx-auto px-4 py-2.5 flex items-center justify-between gap-4 flex-wrap">
+
+        {/* Left */}
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-sm flex items-center justify-center flex-shrink-0"
+            style={{ background: COLOR.green }}>
+            <Building2 size={15} className="text-white" />
+          </div>
+          <div>
+            <div className="text-white font-black text-sm leading-none">
+              Bienvenue, {activeProClient.name}
+            </div>
+            {activeProClient.company && (
+              <div className="text-xs mt-0.5" style={{ color: '#9ca3af' }}>
+                {activeProClient.company}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Stats */}
+        <div className="hidden md:flex items-center gap-5">
+          <div className="flex items-center gap-1.5 text-xs" style={{ color: '#9ca3af' }}>
+            <Tag size={12} style={{ color: COLOR.green }} />
+            <span><strong className="text-white">{overrideCount}</strong> tarifs Pro</span>
+          </div>
+          <div className="flex items-center gap-1.5 text-xs" style={{ color: '#9ca3af' }}>
+            <Clock size={12} style={{ color: COLOR.red }} />
+            <span>
+              <strong className="text-white">{orderCount}</strong>
+              {' '}commande{orderCount !== 1 ? 's' : ''}
+            </span>
+          </div>
+        </div>
+
+        {/* Logout */}
+        <button onClick={logoutProClient}
+          className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-sm text-white"
+          style={{ background:'rgba(255,255,255,.1)', border:'1px solid rgba(255,255,255,.15)' }}>
+          <LogOut size={12} /> Déconnexion Pro
+        </button>
+      </div>
+    </div>
+  );
+}
+</file>
+
+<file path="src/components/SafeImage.tsx">
+import type { ImgHTMLAttributes } from 'react';
+
+interface Props extends ImgHTMLAttributes<HTMLImageElement> {
+  fallbackText?: string;
+}
+
+export default function SafeImage({ fallbackText, alt, ...props }: Props) {
+  const label   = encodeURIComponent(fallbackText ?? alt ?? 'Product');
+  const fallback = `https://placehold.co/300x300/f0f4f8/94a3b8?text=${label}`;
+
+  return (
+    <img
+      {...props}
+      alt={alt ?? fallbackText ?? 'Product'}
+      onError={e => {
+        const img = e.currentTarget;
+        if (img.src !== fallback) img.src = fallback;
+      }}
+    />
+  );
+}
+</file>
+
+<file path="src/components/TrustBanner.tsx">
+import { Zap, Truck, ShieldCheck, Leaf } from 'lucide-react';
+import { COLOR } from '../data/constants';
+
+const ITEMS = [
+  { icon: Zap,         title: 'Livraison Express',    subtitle: 'En 30 à 60 min',     detail: 'Commandez avant 14h, livré aujourd\'hui', accent: COLOR.red   },
+  { icon: Truck,       title: 'Livraison à domicile', subtitle: 'Dès 2.99 €',          detail: 'Livraison standard sous 24–48h',           accent: COLOR.green },
+  { icon: ShieldCheck, title: 'Paiement sécurisé',    subtitle: '3D Secure & SSL',     detail: 'Toutes cartes bancaires acceptées',         accent: COLOR.red   },
+  { icon: Leaf,        title: 'Fraîcheur garantie',   subtitle: '100 % frais',          detail: 'Remboursé si non satisfait',               accent: COLOR.green },
+] as const;
+
+export default function TrustBanner() {
+  return (
+    <section aria-label="Nos engagements" className="border-t border-b"
+      style={{ background: '#fff', borderColor: COLOR.border }}>
+      <div className="max-w-7xl mx-auto px-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 divide-x" style={{ borderColor: COLOR.border }}>
+          {ITEMS.map(({ icon: Icon, title, subtitle, detail, accent }) => (
+            <div key={title} className="flex items-start gap-3 px-5 py-4">
+              <div className="flex-shrink-0 w-10 h-10 rounded-sm flex items-center justify-center mt-0.5"
+                style={{ background: accent }}>
+                <Icon size={19} className="text-white" />
+              </div>
+              <div>
+                <p className="text-sm font-black text-gray-800 leading-tight">{title}</p>
+                <p className="text-xs font-bold" style={{ color: accent }}>{subtitle}</p>
+                <p className="text-xs text-gray-400 mt-0.5 leading-tight">{detail}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+</file>
+
+<file path="src/context/AppContext.tsx">
+import {
+  createContext, useContext, useState, useEffect,
+  useCallback, useMemo, type ReactNode,
+} from 'react';
+import type { Product, CartItem, AppContextType, PageKey, ProClient, OrderRecord } from '../types';
+import { SEED_PRODUCTS, SEED_PRO_CLIENTS } from '../data/products';
+import {
+  ADMIN_ROUTE, ADMIN_PASSWORD, SHOPIFY_STORE,
+  LS_PRODUCTS, LS_CART, LS_PRO_CLIENTS,
+  SS_ADMIN, SS_PRO_CLIENT,
+} from '../data/constants';
+
+// ── Storage helpers ───────────────────────────────────────────────────────────
+function readLS<T>(key: string, fallback: T): T {
+  try { const r = localStorage.getItem(key); return r ? JSON.parse(r) : fallback; }
+  catch { return fallback; }
+}
+function writeLS(key: string, val: unknown) {
+  try { localStorage.setItem(key, JSON.stringify(val)); } catch {}
+}
+
+function initialPage(): PageKey {
+  const h = window.location.hash.replace(/^#\/?/, '');
+  if (h === ADMIN_ROUTE) return 'admin';
+  if (h === 'products')  return 'products';
+  return 'home';
+}
+
+// ── 6-digit code generator ────────────────────────────────────────────────────
+function gen6DigitCode(existing: string[]): string {
+  let code: string;
+  do { code = String(Math.floor(100000 + Math.random() * 900000)); }
+  while (existing.includes(code));
+  return code;
+}
+
+const AppContext = createContext<AppContextType | null>(null);
+
+export function AppProvider({ children }: { children: ReactNode }) {
+  const [products,  setProducts]  = useState<Product[]>   (() => readLS(LS_PRODUCTS,    SEED_PRODUCTS));
+  const [cart,      setCart]      = useState<CartItem[]>   (() => readLS(LS_CART,        []));
+  const [proClients,setProClients]= useState<ProClient[]>  (() => readLS(LS_PRO_CLIENTS, SEED_PRO_CLIENTS));
+  const [cartOpen,  setCartOpen]  = useState(false);
+  const [adminAuth, setAdminAuth] = useState(() => sessionStorage.getItem(SS_ADMIN) === 'yes');
+  const [page,      setPage]      = useState<PageKey>(initialPage);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [proLoginOpen,  setProLoginOpen]  = useState(false);
+  const [checkoutOpen,  setCheckoutOpen]  = useState(false);
+  const [activeProClient, setActiveProClient] = useState<ProClient | null>(() => {
+    try {
+      const s = sessionStorage.getItem(SS_PRO_CLIENT);
+      if (!s) return null;
+      const saved = JSON.parse(s) as ProClient;
+      // Refresh from proClients state in case overrides changed
+      return saved;
+    } catch { return null; }
+  });
+
+  useEffect(() => writeLS(LS_PRODUCTS,    products),   [products]);
+  useEffect(() => writeLS(LS_CART,        cart),       [cart]);
+  useEffect(() => writeLS(LS_PRO_CLIENTS, proClients), [proClients]);
+
+  // Sync active pro client when proClients list changes
+  useEffect(() => {
+    if (activeProClient) {
+      const refreshed = proClients.find(c => c.id === activeProClient.id);
+      if (refreshed) {
+        setActiveProClient(refreshed);
+        sessionStorage.setItem(SS_PRO_CLIENT, JSON.stringify(refreshed));
+      }
+    }
+  }, [proClients]); // eslint-disable-line
+
+  // Hash router
+  const navigate = useCallback((p: PageKey) => {
+    setPage(p);
+    window.location.hash = p === 'home' ? '' : p;
+    window.scrollTo({ top: 0 });
+  }, []);
+
+  useEffect(() => {
+    const onHash = () => setPage(initialPage());
+    window.addEventListener('hashchange', onHash);
+    return () => window.removeEventListener('hashchange', onHash);
+  }, []);
+
+  // Search
+  const submitSearch = useCallback((q: string) => {
+    setSearchQuery(q);
+    navigate('products');
+  }, [navigate]);
+
+  // ── Pricing helpers ─────────────────────────────────────────────────────────
+  const priceFor = useCallback((product: Product): number => {
+    if (activeProClient) {
+      const override = activeProClient.priceOverrides[product.id];
+      if (override !== undefined && override !== null) return override;
+    }
+    return product.price;
+  }, [activeProClient]);
+
+  // Price after discount (for non-pro standard display)
+  const effectivePrice = useCallback((product: Product): number => {
+    const base = priceFor(product);
+    if (!activeProClient && product.discount) {
+      return parseFloat((base * (1 - product.discount / 100)).toFixed(2));
+    }
+    return base;
+  }, [priceFor, activeProClient]);
+
+  // ── Cart ────────────────────────────────────────────────────────────────────
+  const addToCart = useCallback((product: Product) => {
+    const ep = effectivePrice(product);
+    setCart(prev => {
+      const ex = prev.find(i => i.id === product.id);
+      return ex
+        ? prev.map(i => i.id === product.id ? { ...i, quantity: i.quantity + 1 } : i)
+        : [...prev, { ...product, quantity: 1, effectivePrice: ep }];
+    });
+  }, [effectivePrice]);
+
+  const removeFromCart  = useCallback((id: string) => setCart(p => p.filter(i => i.id !== id)), []);
+  const updateQty       = useCallback((id: string, qty: number) => {
+    if (qty <= 0) { removeFromCart(id); return; }
+    setCart(p => p.map(i => i.id === id ? { ...i, quantity: qty } : i));
+  }, [removeFromCart]);
+  const clearCart = useCallback(() => setCart([]), []);
+
+  const cartTotal = useMemo(() => cart.reduce((s, i) => s + i.effectivePrice * i.quantity, 0), [cart]);
+  const cartCount = useMemo(() => cart.reduce((s, i) => s + i.quantity, 0), [cart]);
+
+  // ── Auth ────────────────────────────────────────────────────────────────────
+  const login = useCallback((pw: string): boolean => {
+    if (pw === ADMIN_PASSWORD) { sessionStorage.setItem(SS_ADMIN, 'yes'); setAdminAuth(true); return true; }
+    return false;
+  }, []);
+
+  const logout = useCallback(() => {
+    sessionStorage.removeItem(SS_ADMIN);
+    setAdminAuth(false);
+    navigate('home');
+  }, [navigate]);
+
+  // ── Pro client auth ─────────────────────────────────────────────────────────
+  const loginProClient = useCallback((code: string): boolean => {
+    const client = proClients.find(c => c.accessCode === code.trim());
+    if (client) {
+      sessionStorage.setItem(SS_PRO_CLIENT, JSON.stringify(client));
+      setActiveProClient(client);
+      setProLoginOpen(false);
+      return true;
+    }
+    return false;
+  }, [proClients]);
+
+  const logoutProClient = useCallback(() => {
+    sessionStorage.removeItem(SS_PRO_CLIENT);
+    setActiveProClient(null);
+  }, []);
+
+  // ── Pro clients CRUD ────────────────────────────────────────────────────────
+  const addProClient = useCallback((name: string, company?: string): ProClient => {
+    const existing = proClients.map(c => c.accessCode);
+    const newClient: ProClient = {
+      id: `pc${Date.now()}`,
+      name,
+      company,
+      accessCode: gen6DigitCode(existing),
+      priceOverrides: {},
+      purchaseHistory: [],
+      createdAt: new Date().toISOString().split('T')[0],
+    };
+    setProClients(prev => [...prev, newClient]);
+    return newClient;
+  }, [proClients]);
+
+  const updateProClient = useCallback((c: ProClient) => {
+    setProClients(prev => prev.map(x => x.id === c.id ? c : x));
+  }, []);
+
+  const deleteProClient = useCallback((id: string) => {
+    setProClients(prev => prev.filter(x => x.id !== id));
+    if (activeProClient?.id === id) logoutProClient();
+  }, [activeProClient, logoutProClient]);
+
+  const setPriceOverride = useCallback((clientId: string, productId: string, price: number | null) => {
+    setProClients(prev => prev.map(c => {
+      if (c.id !== clientId) return c;
+      const overrides = { ...c.priceOverrides };
+      if (price === null) delete overrides[productId];
+      else overrides[productId] = price;
+      return { ...c, priceOverrides: overrides };
+    }));
+  }, []);
+
+  const recordOrder = useCallback((clientId: string, order: OrderRecord) => {
+    setProClients(prev => prev.map(c =>
+      c.id === clientId
+        ? { ...c, purchaseHistory: [order, ...c.purchaseHistory] }
+        : c
+    ));
+  }, []);
+
+  // ── Product CRUD ────────────────────────────────────────────────────────────
+  const addProduct    = useCallback((p: Omit<Product, 'id'>) =>
+    setProducts(prev => [...prev, { ...p, id: `p${Date.now()}` }]), []);
+  const updateProduct = useCallback((p: Product) =>
+    setProducts(prev => prev.map(x => x.id === p.id ? p : x)), []);
+  const deleteProduct = useCallback((id: string) => {
+    setProducts(prev => prev.filter(x => x.id !== id));
+    setCart(prev => prev.filter(x => x.id !== id));
+  }, []);
+
+  // ── Shopify checkout (fallback) ─────────────────────────────────────────────
+  const checkout = useCallback(() => {
+    if (!cart.length) return;
+    const str = cart.map(i => `${i.variantId}:${i.quantity}`).join(',');
+    window.open(`https://${SHOPIFY_STORE}.myshopify.com/cart/${str}`, '_blank');
+  }, [cart]);
+
+  return (
+    <AppContext.Provider value={{
+      products, addProduct, updateProduct, deleteProduct,
+      cart, cartOpen, setCartOpen, addToCart, removeFromCart, updateQty,
+      clearCart, cartTotal, cartCount,
+      priceFor, effectivePrice,
+      page, navigate,
+      searchQuery, setSearchQuery, submitSearch,
+      adminAuth, login, logout,
+      proClients, addProClient, updateProClient, deleteProClient,
+      setPriceOverride,
+      activeProClient, loginProClient, logoutProClient, recordOrder,
+      proLoginOpen, setProLoginOpen,
+      checkoutOpen, setCheckoutOpen,
+      checkout,
+    }}>
+      {children}
+    </AppContext.Provider>
+  );
+}
+
+// eslint-disable-next-line react-refresh/only-export-components
+export function useApp(): AppContextType {
+  const ctx = useContext(AppContext);
+  if (!ctx) throw new Error('useApp must be used inside <AppProvider>');
+  return ctx;
+}
+</file>
+
+<file path="src/data/products.ts">
+import type { Product, ProClient } from '../types';
+
+export const SEED_PRODUCTS: Product[] = [
+  // Fruits
+  { id:'p1',  name:'Pommes Bio Gala',         category:'Fruits',     price:2.99,  unit:'1 kg',    variantId:'111111', inStock:true,  description:'Pommes Gala bio, croquantes.',      image:'https://images.unsplash.com/photo-1568702846914-96b305d2aaeb?w=400&fit=crop&auto=format', discount:10, featured:true,  createdAt:'2024-11-01', tags:['bio','fruit'] },
+  { id:'p2',  name:'Bananes de la Réunion',   category:'Fruits',     price:1.49,  unit:'régime',  variantId:'222222', inStock:true,  description:'Bananes Cavendish mûres.',          image:'https://images.unsplash.com/photo-1603833665858-e61d17a86224?w=400&fit=crop&auto=format',                               createdAt:'2024-10-15', tags:['fruit'] },
+  { id:'p3',  name:'Fraises Gariguette',      category:'Fruits',     price:3.49,  unit:'500 g',   variantId:'333333', inStock:true,  description:'Fraises gorgées de soleil.',        image:'https://images.unsplash.com/photo-1464965911861-746a04b4bca6?w=400&fit=crop&auto=format', discount:15,                createdAt:'2024-12-01', tags:['fruit'] },
+  { id:'p4',  name:'Myrtilles Fraîches',      category:'Fruits',     price:3.99,  unit:'125 g',   variantId:'444444', inStock:true,  description:'Myrtilles riches en antioxydants.',image:'https://images.unsplash.com/photo-1498557850523-fd3d118b962e?w=400&fit=crop&auto=format', isNew:true,                createdAt:'2024-12-10', tags:['fruit','bio'] },
+  { id:'p5',  name:'Mangues Ataulfo',         category:'Fruits',     price:2.29,  unit:'pièce',   variantId:'444455', inStock:true,  description:'Mangues tropicales sucrées.',       image:'https://images.unsplash.com/photo-1553279768-865429fa0078?w=400&fit=crop&auto=format', featured:true,             createdAt:'2024-11-20', tags:['fruit','tropical'] },
+  { id:'p6',  name:'Raisins Muscat',          category:'Fruits',     price:4.29,  unit:'500 g',   variantId:'444466', inStock:true,  description:'Raisins muscat croquants.',         image:'https://images.unsplash.com/photo-1537640538966-79f369143f8f?w=400&fit=crop&auto=format', discount:20, isNew:true, createdAt:'2024-12-05', tags:['fruit'] },
+  // Vegetables
+  { id:'p7',  name:'Carottes Bio',            category:'Vegetables', price:1.29,  unit:'1 kg',    variantId:'555555', inStock:true,  description:'Carottes bio sucrées.',             image:'https://images.unsplash.com/photo-1598170845058-32b9d6a5da37?w=400&fit=crop&auto=format', featured:true,             createdAt:'2024-10-01', tags:['bio','légume'] },
+  { id:'p8',  name:'Tomates Grappe',          category:'Vegetables', price:2.19,  unit:'1 kg',    variantId:'666666', inStock:true,  description:'Tomates grappe mûries sur plant.', image:'https://images.unsplash.com/photo-1546094096-0df4bcaaa337?w=400&fit=crop&auto=format', discount:12,                createdAt:'2024-11-10', tags:['légume'] },
+  { id:'p9',  name:'Salade Batavia',          category:'Vegetables', price:1.09,  unit:'pièce',   variantId:'777777', inStock:true,  description:'Batavia croquante, prête à emploi.',image:'https://images.unsplash.com/photo-1558818498-28c1e002b655?w=400&fit=crop&auto=format',                               createdAt:'2024-10-20', tags:['légume'] },
+  { id:'p10', name:'Brocoli Frais',           category:'Vegetables', price:1.69,  unit:'pièce',   variantId:'888888', inStock:true,  description:'Brocoli en fleurs frais.',          image:'https://images.unsplash.com/photo-1459411621453-7b03977f4bfc?w=400&fit=crop&auto=format', isNew:true,                createdAt:'2024-12-08', tags:['légume','bio'] },
+  { id:'p11', name:'Épinards Baby',           category:'Vegetables', price:1.89,  unit:'200 g',   variantId:'888899', inStock:true,  description:'Jeunes pousses d\'épinards lavées.',image:'https://images.unsplash.com/photo-1576045057995-568f588f82fb?w=400&fit=crop&auto=format', featured:true,             createdAt:'2024-11-25', tags:['légume'] },
+  { id:'p12', name:'Courgettes Vertes',       category:'Vegetables', price:1.49,  unit:'500 g',   variantId:'888900', inStock:true,  description:'Courgettes fraîches du marché.',   image:'https://images.unsplash.com/photo-1563565375-f3fdfdbefa83?w=400&fit=crop&auto=format', discount:8,                 createdAt:'2024-11-15', tags:['légume'] },
+  // Dairy
+  { id:'p13', name:'Lait Entier Bio',         category:'Dairy',      price:1.79,  unit:'2 L',     variantId:'999999', inStock:true,  description:'Lait entier bio pasteurisé.',      image:'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=400&fit=crop&auto=format', featured:true,             createdAt:'2024-10-01', tags:['bio','lait'] },
+  { id:'p14', name:'Emmental Français',       category:'Dairy',      price:4.99,  unit:'250 g',   variantId:'101010', inStock:true,  description:'Emmental AOP au goût noisette.',   image:'https://images.unsplash.com/photo-1452195100486-9cc805987862?w=400&fit=crop&auto=format', discount:10,               createdAt:'2024-11-01', tags:['fromage'] },
+  { id:'p15', name:'Yaourt Nature x4',        category:'Dairy',      price:2.39,  unit:'4×125 g', variantId:'111110', inStock:true,  description:'Yaourts brassés, sans sucres.',    image:'https://images.unsplash.com/photo-1488477181946-6428a0291777?w=400&fit=crop&auto=format',                               createdAt:'2024-10-15', tags:['yaourt'] },
+  { id:'p16', name:'Beurre Doux AOP',         category:'Dairy',      price:3.29,  unit:'250 g',   variantId:'121212', inStock:true,  description:'Beurre doux AOP 82% MG.',          image:'https://images.unsplash.com/photo-1589985270826-4b7bb135bc9d?w=400&fit=crop&auto=format', isNew:true,                createdAt:'2024-12-02', tags:['beurre'] },
+  { id:'p17', name:'Crème Fraîche Épaisse',   category:'Dairy',      price:2.09,  unit:'20 cl',   variantId:'121213', inStock:true,  description:'Crème fraîche épaisse 30% MG.',    image:'https://images.unsplash.com/photo-1563636619-e9143da7973b?w=400&fit=crop&auto=format', discount:5,                 createdAt:'2024-11-18', tags:['crème'] },
+  // Bakery
+  { id:'p18', name:'Baguette Tradition',      category:'Bakery',     price:0.89,  unit:'pièce',   variantId:'131313', inStock:true,  description:'Baguette tradition cuite sur pierre.',image:'https://images.unsplash.com/photo-1549931319-a545dcf3bc73?w=400&fit=crop&auto=format', featured:true,             createdAt:'2024-10-01', tags:['pain'] },
+  { id:'p19', name:'Croissants Pur Beurre x4',category:'Bakery',     price:2.49,  unit:'4 pièces',variantId:'141414', inStock:true,  description:'Croissants feuilletés pur beurre.', image:'https://images.unsplash.com/photo-1555507036-ab1f4038808a?w=400&fit=crop&auto=format', discount:15,                createdAt:'2024-10-20', tags:['viennoiserie'] },
+  { id:'p20', name:'Pain au Levain Artisan',  category:'Bakery',     price:3.49,  unit:'pièce',   variantId:'141500', inStock:true,  description:'Pain au levain naturel artisanal.', image:'https://images.unsplash.com/photo-1586444248902-2f64eddc13df?w=400&fit=crop&auto=format', isNew:true, featured:true, createdAt:'2024-12-07', tags:['pain','artisan'] },
+  // Meat
+  { id:'p21', name:'Escalope de Poulet',      category:'Meat',       price:6.99,  unit:'1 kg',    variantId:'151515', inStock:true,  description:'Poulet Label Rouge élevage plein air.',image:'https://images.unsplash.com/photo-1604503468506-a8da13d11d36?w=400&fit=crop&auto=format', featured:true,            createdAt:'2024-10-01', tags:['poulet'] },
+  { id:'p22', name:'Steak Haché 15% MG',      category:'Meat',       price:8.49,  unit:'500 g',   variantId:'161616', inStock:true,  description:'Steak haché pur bœuf façon bouchère.',image:'https://images.unsplash.com/photo-1607623814075-e51df1bdc82f?w=400&fit=crop&auto=format', discount:10,              createdAt:'2024-11-05', tags:['bœuf'] },
+  { id:'p23', name:'Filet de Saumon Atlantique',category:'Meat',     price:9.99,  unit:'300 g',   variantId:'161700', inStock:false, description:'Filet de saumon Atlantique avec peau.',image:'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=400&fit=crop&auto=format', isNew:true,               createdAt:'2024-12-10', tags:['poisson'] },
+  { id:'p24', name:'Côtelettes d\'Agneau',    category:'Meat',       price:12.99, unit:'4 pièces',variantId:'161800', inStock:true,  description:'Côtelettes d\'agneau fraîches.',    image:'https://images.unsplash.com/photo-1529694157872-4e0c0f3b238b?w=400&fit=crop&auto=format', featured:true, discount:12,createdAt:'2024-11-28', tags:['agneau'] },
+  // Beverages
+  { id:'p25', name:'Jus d\'Orange Pressé',    category:'Beverages',  price:2.89,  unit:'1 L',     variantId:'171717', inStock:true,  description:'100% jus d\'orange pressé.',        image:'https://images.unsplash.com/photo-1621506289937-a8e4df240d0b?w=400&fit=crop&auto=format', featured:true,             createdAt:'2024-10-01', tags:['jus'] },
+  { id:'p26', name:'Eau Gazeuse Naturelle',   category:'Beverages',  price:0.99,  unit:'1.5 L',   variantId:'181818', inStock:true,  description:'Eau minérale naturellement gazeuse.',image:'https://images.unsplash.com/photo-1523362628745-0c100150b504?w=400&fit=crop&auto=format', discount:20,               createdAt:'2024-10-01', tags:['eau'] },
+  { id:'p27', name:'Café Arabica en Grains',  category:'Beverages',  price:7.49,  unit:'500 g',   variantId:'181900', inStock:true,  description:'Arabica torréfaction moyenne.',     image:'https://images.unsplash.com/photo-1447933601403-0c6688de566e?w=400&fit=crop&auto=format', isNew:true, featured:true, createdAt:'2024-12-01', tags:['café'] },
+  // Frozen
+  { id:'p28', name:'Petits Pois Surgelés',    category:'Frozen',     price:1.99,  unit:'500 g',   variantId:'191919', inStock:true,  description:'Petits pois extra-fins surgelés.', image:'https://images.unsplash.com/photo-1587735243615-c03f25aaff15?w=400&fit=crop&auto=format',                               createdAt:'2024-10-01', tags:['surgelé'] },
+  { id:'p29', name:'Pizza Margherita',        category:'Frozen',     price:4.49,  unit:'pièce',   variantId:'202020', inStock:true,  description:'Pizza margherita cuite sur pierre.', image:'https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=400&fit=crop&auto=format', discount:25,               createdAt:'2024-11-10', tags:['pizza'] },
+  { id:'p30', name:'Frites Spéciales Four',   category:'Frozen',     price:2.29,  unit:'750 g',   variantId:'202021', inStock:true,  description:'Frites croustillantes pour le four.',image:'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=400&fit=crop&auto=format', isNew:true,                createdAt:'2024-12-05', tags:['frites'] },
+  // Pantry
+  { id:'p31', name:'Huile d\'Olive Extra Vierge',category:'Pantry',  price:8.99,  unit:'75 cl',   variantId:'303030', inStock:true,  description:'Première pression à froid, AOP.',  image:'https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?w=400&fit=crop&auto=format', featured:true, isNew:true, createdAt:'2024-12-03', tags:['huile','épicerie'] },
+  { id:'p32', name:'Pâtes Spaghetti n°5',     category:'Pantry',     price:1.59,  unit:'500 g',   variantId:'313131', inStock:true,  description:'Spaghetti de semoule de blé dur.', image:'https://images.unsplash.com/photo-1621996346565-e3dbc353d2e5?w=400&fit=crop&auto=format', discount:10,               createdAt:'2024-10-15', tags:['pâtes'] },
+  { id:'p33', name:'Riz Basmati Premium',     category:'Pantry',     price:3.29,  unit:'1 kg',    variantId:'323232', inStock:true,  description:'Riz basmati long grain arôme délicat.',image:'https://images.unsplash.com/photo-1586201375761-83865001e31c?w=400&fit=crop&auto=format',                          createdAt:'2024-11-01', tags:['riz'] },
+  // Snacks
+  { id:'p34', name:'Chips Artisanales Nature',category:'Snacks',     price:2.79,  unit:'150 g',   variantId:'404040', inStock:true,  description:'Chips tranchées épaisses artisanales.',image:'https://images.unsplash.com/photo-1621447504864-d8686e12698c?w=400&fit=crop&auto=format', isNew:true, discount:10, createdAt:'2024-12-09', tags:['chips'] },
+  { id:'p35', name:'Chocolat Noir 70%',       category:'Snacks',     price:3.49,  unit:'100 g',   variantId:'414141', inStock:true,  description:'Tablette chocolat noir 70% cacao.',image:'https://images.unsplash.com/photo-1511381939415-e44015466834?w=400&fit=crop&auto=format', featured:true,             createdAt:'2024-11-20', tags:['chocolat'] },
+];
+
+export const SEED_PRO_CLIENTS: ProClient[] = [
+  {
+    id:'pc1', name:'Restaurant Le Marrakchi', company:'SARL Le Marrakchi',
+    accessCode:'123456', createdAt:'2024-09-01', purchaseHistory:[],
+    priceOverrides:{ p1:2.20, p7:0.99, p13:1.40, p21:5.50, p25:2.20, p18:0.69 },
+  },
+  {
+    id:'pc2', name:'Hôtel Atlas Asni', company:'Atlas Hospitality Group',
+    accessCode:'654321', createdAt:'2024-09-15', purchaseHistory:[],
+    priceOverrides:{ p13:1.35, p18:0.65, p19:1.99, p25:2.40, p27:6.50, p31:7.50 },
+  },
+];
+</file>
+
+<file path="src/index.css">
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Brand variables (Express Food) ──────────────────────────────────── */
+:root {
+  --red:     #E31E24;
+  --green:   #2D8A2D;
+  --dark:    #111111;
+  --gray-bg: #f6f6f6;
+  --border:  #e5e5e5;
+}
+
+/* ── Base reset ──────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #1a1a1a;
+  background: #f6f6f6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── No animations ───────────────────────────────────────────────────── */
+*:not(input):not(select):not(textarea),
+*:not(input):not(select):not(textarea)::before,
+*:not(input):not(select):not(textarea)::after {
+  animation-duration: 0s !important;
+  animation-delay:    0s !important;
+  transition-duration:0s !important;
+  transition-delay:   0s !important;
+}
+
+/* ── Range sliders ───────────────────────────────────────────────────── */
+input[type='range'] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  border-radius: 2px;
+  background: #e5e5e5;
+  outline: none;
+}
+input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--red);
+  cursor: pointer;
+  border: 2px solid white;
+  box-shadow: 0 1px 3px rgba(0,0,0,.25);
+}
+input[type='range']::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--red);
+  cursor: pointer;
+  border: 2px solid white;
+  box-shadow: 0 1px 3px rgba(0,0,0,.25);
+}
+
+/* ── Scrollbar ───────────────────────────────────────────────────────── */
+::-webkit-scrollbar       { width:6px; height:6px; }
+::-webkit-scrollbar-track { background:#f0f0f0; }
+::-webkit-scrollbar-thumb { background:#c5c5c5; border-radius:3px; }
+::-webkit-scrollbar-thumb:hover { background:#a0a0a0; }
+
+/* ── Utility ─────────────────────────────────────────────────────────── */
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ── Express Food hero gradient ──────────────────────────────────────── */
+.ef-hero-gradient {
+  background: linear-gradient(135deg, #111111 0%, #1a1a1a 60%, #0f2d0f 100%);
+}
+</file>
+
+<file path="src/main.tsx">
+import { StrictMode } from 'react';
+import { createRoot } from 'react-dom/client';
+import './index.css';
+import App from './App';
+
+const root = document.getElementById('root');
+if (!root) throw new Error('Root element #root not found');
+
+createRoot(root).render(
+  <StrictMode>
+    <App />
+  </StrictMode>,
+);
+</file>
+
+<file path="src/pages/AdminDashboard.tsx">
+import { useState, useRef } from 'react';
+import { Plus, Edit2, Trash2, Check, Upload, LogOut, Package, Users, RefreshCw, Key } from 'lucide-react';
+import { useApp } from '../context/AppContext';
+import SafeImage from '../components/SafeImage';
+import { COLOR, PRODUCT_CATEGORIES, ALL_CATEGORIES, BRAND_NAME } from '../data/constants';
+import { LogoLight } from '../components/Logo';
+import type { Product, ProClient, ProductFormState, ImageInputMode } from '../types';
+
+// ── Shared toggle ──────────────────────────────────────────────────────────────
+function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <button role="switch" aria-checked={checked} onClick={() => onChange(!checked)}
+      className="relative w-10 h-5 rounded-full border-2 flex-shrink-0"
+      style={{
+        background:  checked ? COLOR.red : '#d1d5db',
+        borderColor: checked ? COLOR.red : '#d1d5db',
+      }}>
+      <span className="absolute top-0.5 w-3.5 h-3.5 bg-white rounded-full shadow"
+        style={{ left: checked ? 'calc(100% - 16px)' : '1px' }} />
+    </button>
+  );
+}
+
+// ── Section head ───────────────────────────────────────────────────────────────
+function TableHead({ children }: { children: React.ReactNode }) {
+  return (
+    <th className="text-left px-4 py-2.5 text-xs font-black text-gray-500 uppercase tracking-wider whitespace-nowrap">
+      {children}
+    </th>
+  );
+}
+
+const EMPTY_FORM: ProductFormState = {
+  name: '', category: 'Fruits', price: '', unit: 'kg', image: '',
+  variantId: '', inStock: true, description: '', discount: '', isNew: false, featured: false,
+};
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// PRODUCTS TAB
+// ═══════════════════════════════════════════════════════════════════════════════
+function ProductsTab() {
+  const { products, addProduct, updateProduct, deleteProduct } = useApp();
+  const [view,      setView]      = useState<'table' | 'form'>('table');
+  const [editing,   setEditing]   = useState<Product | null>(null);
+  const [form,      setForm]      = useState<ProductFormState>(EMPTY_FORM);
+  const [imgMode,   setImgMode]   = useState<ImageInputMode>('url');
+  const [search,    setSearch]    = useState('');
+  const [catFilter, setCatFilter] = useState('All');
+  const [errors,    setErrors]    = useState<Partial<Record<keyof ProductFormState, string>>>({});
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const rows = products
+    .filter(p => catFilter === 'All' || p.category === catFilter)
+    .filter(p => p.name.toLowerCase().includes(search.toLowerCase()));
+
+  const openAdd  = () => { setEditing(null); setForm(EMPTY_FORM); setErrors({}); setImgMode('url'); setView('form'); };
+  const openEdit = (p: Product) => {
+    setEditing(p);
+    setForm({ ...p, price: String(p.price), discount: String(p.discount ?? ''), isNew: !!p.isNew, featured: !!p.featured });
+    setErrors({}); setImgMode('url'); setView('form');
+  };
+
+  const set = <K extends keyof ProductFormState>(k: K, v: ProductFormState[K]) => {
+    setForm(f => ({ ...f, [k]: v }));
+    if (errors[k]) setErrors(e => ({ ...e, [k]: undefined }));
+  };
+
+  const validate = () => {
+    const e: typeof errors = {};
+    if (!form.name.trim())                        e.name      = 'Requis';
+    if (!form.price || isNaN(Number(form.price))) e.price     = 'Invalide';
+    if (!form.variantId.trim())                   e.variantId = 'Requis';
+    setErrors(e);
+    return Object.keys(e).length === 0;
+  };
+
+  const handleSave = () => {
+    if (!validate()) return;
+    const p = {
+      ...form,
+      price:    parseFloat(form.price),
+      discount: form.discount ? Number(form.discount) : undefined,
+    } as Omit<Product, 'id'>;
+    if (editing) updateProduct({ ...p, id: editing.id });
+    else addProduct(p);
+    setView('table');
+  };
+
+  const handleDelete = (id: string) => {
+    if (window.confirm('Supprimer définitivement ?')) deleteProduct(id);
+  };
+
+  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const r = new FileReader();
+    r.onload = ev => set('image', ev.target?.result as string);
+    r.readAsDataURL(file);
+  };
+
+  if (view === 'form') return (
+    <div className="max-w-xl mx-auto">
+      <h2 className="font-black text-xl text-gray-800 mb-4">
+        {editing ? '✏️ Modifier' : '➕ Ajouter'} un produit
+      </h2>
+
+      <div className="bg-white border rounded-sm" style={{ borderColor: '#e5e5e5', borderTop: `3px solid ${COLOR.red}` }}>
+        <div className="p-5 flex flex-col gap-4">
+
+          {/* Image section */}
+          <div>
+            <label className="text-xs font-black text-gray-500 uppercase tracking-wide block mb-2">
+              Image du produit
+            </label>
+            <div className="flex gap-2 mb-2">
+              {(['url', 'upload'] as const).map(m => (
+                <button key={m} onClick={() => setImgMode(m)}
+                  className="text-xs px-3 py-1.5 rounded-sm border font-bold"
+                  style={{
+                    background:  imgMode === m ? COLOR.red : 'white',
+                    color:       imgMode === m ? 'white'   : '#555',
+                    borderColor: '#e5e5e5',
+                  }}>
+                  {m === 'url' ? '🔗 URL' : '📤 Upload'}
+                </button>
+              ))}
+            </div>
+
+            {imgMode === 'url' ? (
+              <input type="text" value={form.image} onChange={e => set('image', e.target.value)}
+                placeholder="https://images.unsplash.com/…"
+                className="w-full border px-3 py-2 text-sm rounded-sm focus:outline-none"
+                style={{ borderColor: '#e5e5e5' }} />
+            ) : (
+              <div>
+                <input ref={fileRef} type="file" accept="image/*" onChange={handleFile} className="hidden" />
+                <button onClick={() => fileRef.current?.click()}
+                  className="flex items-center justify-center gap-2 border px-4 py-3 text-sm rounded-sm w-full"
+                  style={{ borderColor: '#e5e5e5', borderStyle: 'dashed' }}>
+                  <Upload size={15} style={{ color: COLOR.red }} /> Choisir une image (PNG, JPG, WEBP)
+                </button>
+                {form.image?.startsWith('data:') && (
+                  <p className="text-xs mt-1" style={{ color: COLOR.green }}>✓ Image Base64 chargée</p>
+                )}
+              </div>
+            )}
+
+            {form.image && (
+              <SafeImage src={form.image} alt="Aperçu"
+                className="mt-2 h-20 w-20 object-cover rounded-sm border"
+                style={{ borderColor: '#e5e5e5' }} />
+            )}
+          </div>
+
+          {/* Text fields */}
+          {([
+            { label: 'Nom du produit *',      key: 'name',        type: 'text',   ph: 'Ex: Pommes Bio Gala' },
+            { label: 'Prix (€) *',            key: 'price',       type: 'number', ph: '0.00' },
+            { label: 'Unité',                 key: 'unit',        type: 'text',   ph: 'kg, pièce, L…' },
+            { label: 'Variant ID Shopify *',  key: 'variantId',   type: 'text',   ph: '1234567890' },
+            { label: 'Description',           key: 'description', type: 'text',   ph: 'Courte description…' },
+            { label: 'Remise (%)',            key: 'discount',    type: 'number', ph: '0' },
+          ] as { label: string; key: keyof ProductFormState; type: string; ph: string }[]).map(f => (
+            <div key={f.key}>
+              <label className="text-xs font-black text-gray-500 uppercase tracking-wide block mb-1.5">
+                {f.label}
+              </label>
+              <input type={f.type} value={form[f.key] as string}
+                onChange={e => set(f.key, e.target.value)} placeholder={f.ph}
+                className="w-full border px-3 py-2 text-sm rounded-sm focus:outline-none"
+                style={{ borderColor: errors[f.key] ? '#ef4444' : '#e5e5e5' }} />
+              {errors[f.key] && <p className="text-red-500 text-xs mt-1">{errors[f.key]}</p>}
+            </div>
+          ))}
+
+          {/* Category */}
+          <div>
+            <label className="text-xs font-black text-gray-500 uppercase tracking-wide block mb-1.5">Catégorie</label>
+            <select value={form.category} onChange={e => set('category', e.target.value)}
+              className="w-full border px-3 py-2 text-sm rounded-sm focus:outline-none bg-white"
+              style={{ borderColor: '#e5e5e5' }}>
+              {PRODUCT_CATEGORIES.map(c => <option key={c}>{c}</option>)}
+            </select>
+          </div>
+
+          {/* Toggles */}
+          <div className="grid grid-cols-3 gap-3">
+            {([
+              { key: 'inStock',  label: 'En stock'  },
+              { key: 'isNew',    label: 'Nouveauté' },
+              { key: 'featured', label: 'Sélection' },
+            ] as { key: 'inStock' | 'isNew' | 'featured'; label: string }[]).map(({ key, label }) => (
+              <div key={key} className="flex items-center gap-2 p-2.5 border rounded-sm"
+                style={{ borderColor: '#f0f0f0' }}>
+                <Toggle checked={form[key] as boolean} onChange={v => set(key, v)} />
+                <span className="text-xs font-medium text-gray-600">{label}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* Actions */}
+          <div className="flex items-center gap-3 flex-wrap pt-2 border-t" style={{ borderColor: '#f0f0f0' }}>
+            <button onClick={handleSave}
+              className="flex items-center gap-2 text-white font-black px-6 py-2.5 rounded-sm text-sm"
+              style={{ background: COLOR.red }}>
+              <Check size={14} /> Enregistrer
+            </button>
+            <button onClick={() => setView('table')}
+              className="border px-5 py-2.5 text-sm rounded-sm text-gray-600"
+              style={{ borderColor: '#e5e5e5' }}>
+              Annuler
+            </button>
+            {editing && (
+              <button onClick={() => { handleDelete(editing.id); setView('table'); }}
+                className="ml-auto flex items-center gap-1.5 text-sm font-medium hover:text-red-600"
+                style={{ color: '#f87171' }}>
+                <Trash2 size={13} /> Supprimer
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  // ── TABLE VIEW ──────────────────────────────────────────────────────────────
+  return (
+    <>
+      {/* Stat cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
+        {[
+          { label: 'Total produits', value: products.length,                       icon: '📦', color: COLOR.red   },
+          { label: 'En stock',       value: products.filter(p => p.inStock).length, icon: '✅', color: COLOR.green },
+          { label: 'Promotions',     value: products.filter(p => p.discount).length,icon: '🏷️', color: '#ef4444'  },
+          { label: 'Nouveautés',     value: products.filter(p => p.isNew).length,   icon: '✨', color: '#7c3aed'  },
+        ].map(s => (
+          <div key={s.label} className="bg-white border rounded-sm p-4" style={{ borderColor: '#e5e5e5' }}>
+            <div className="text-2xl mb-1">{s.icon}</div>
+            <div className="font-black text-2xl" style={{ color: s.color }}>{s.value}</div>
+            <div className="text-xs text-gray-500 mt-0.5">{s.label}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Product table */}
+      <div className="bg-white border rounded-sm overflow-hidden" style={{ borderColor: '#e5e5e5' }}>
+        <div className="flex flex-wrap items-center gap-3 px-4 py-3 border-b" style={{ borderColor: '#e5e5e5' }}>
+          <input type="text" value={search} onChange={e => setSearch(e.target.value)}
+            placeholder="Rechercher un produit…"
+            className="border px-3 py-1.5 text-sm rounded-sm w-48 focus:outline-none"
+            style={{ borderColor: '#e5e5e5' }} />
+          <select value={catFilter} onChange={e => setCatFilter(e.target.value)}
+            className="border px-3 py-1.5 text-sm rounded-sm bg-white focus:outline-none"
+            style={{ borderColor: '#e5e5e5' }}>
+            {ALL_CATEGORIES.map(c => <option key={c}>{c}</option>)}
+          </select>
+          <span className="text-xs text-gray-400">{rows.length} produit{rows.length !== 1 ? 's' : ''}</span>
+          <button onClick={openAdd}
+            className="ml-auto flex items-center gap-2 text-white font-bold px-4 py-2 rounded-sm text-sm"
+            style={{ background: COLOR.red }}>
+            <Plus size={14} /> Ajouter un produit
+          </button>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm min-w-max">
+            <thead style={{ background: '#f6f6f6' }}>
+              <tr>
+                <TableHead>Image</TableHead>
+                <TableHead>Nom</TableHead>
+                <TableHead>Catégorie</TableHead>
+                <TableHead>Prix</TableHead>
+                <TableHead>Remise</TableHead>
+                <TableHead>Flags</TableHead>
+                <TableHead>Stock</TableHead>
+                <TableHead>Actions</TableHead>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((p, i) => (
+                <tr key={p.id} className="border-t"
+                  style={{ borderColor: '#f0f0f0', background: i % 2 === 0 ? 'white' : '#fafafa' }}>
+                  <td className="px-4 py-3">
+                    <SafeImage src={p.image} alt={p.name} fallbackText={p.name}
+                      className="w-11 h-11 object-cover rounded-sm border"
+                      style={{ borderColor: '#e5e5e5' }} />
+                  </td>
+                  <td className="px-4 py-3 max-w-48">
+                    <div className="font-semibold text-gray-800 truncate">{p.name}</div>
+                    <div className="text-xs text-gray-400 truncate">{p.description}</div>
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className="text-xs font-bold px-2 py-0.5 rounded-sm text-white"
+                      style={{ background: COLOR.dark }}>{p.category}</span>
+                  </td>
+                  <td className="px-4 py-3 font-black whitespace-nowrap" style={{ color: COLOR.red }}>
+                    {p.price.toFixed(2)} €
+                  </td>
+                  <td className="px-4 py-3">
+                    {p.discount
+                      ? <span className="text-red-500 font-bold text-xs">-{p.discount}%</span>
+                      : <span className="text-gray-300 text-xs">—</span>}
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex gap-1">
+                      {p.isNew    && <span className="text-xs px-1 py-0.5 rounded-sm text-white font-bold"
+                        style={{ background: '#7c3aed' }}>NEW</span>}
+                      {p.featured && <span className="text-xs px-1 py-0.5 rounded-sm text-white font-bold"
+                        style={{ background: COLOR.green }}>⭐</span>}
+                    </div>
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className={`text-xs font-bold px-2 py-0.5 rounded-sm ${
+                      p.inStock ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'
+                    }`}>
+                      {p.inStock ? 'En stock' : 'Rupture'}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex gap-1">
+                      <button onClick={() => openEdit(p)}
+                        className="p-1.5 rounded-sm hover:bg-red-50"
+                        style={{ color: COLOR.red }} title="Modifier">
+                        <Edit2 size={14} />
+                      </button>
+                      <button onClick={() => handleDelete(p.id)}
+                        className="p-1.5 rounded-sm hover:bg-red-50 text-red-400" title="Supprimer">
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+              {rows.length === 0 && (
+                <tr>
+                  <td colSpan={8} className="text-center py-14 text-gray-400">
+                    <Package size={36} className="mx-auto mb-2" style={{ color: '#e5e5e5' }} />
+                    <p>Aucun produit trouvé</p>
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// PRO CLIENTS TAB
+// ═══════════════════════════════════════════════════════════════════════════════
+function ProClientsTab() {
+  const { proClients, products, addProClient, deleteProClient, setPriceOverride } = useApp();
+
+  const [view,           setView]           = useState<'list' | 'overrides'>('list');
+  const [selectedClient, setSelectedClient] = useState<ProClient | null>(null);
+  const [newName,        setNewName]        = useState('');
+  const [newCompany,     setNewCompany]     = useState('');
+  const [addErr,         setAddErr]         = useState('');
+  const [lastAdded,      setLastAdded]      = useState<ProClient | null>(null);
+  const [catFilter,      setCatFilter]      = useState('All');
+  const [overrideInputs, setOverrideInputs] = useState<Record<string, string>>({});
+  const [overrideSearch, setOverrideSearch] = useState('');
+
+  const handleAddClient = () => {
+    if (!newName.trim()) { setAddErr('Le nom est requis.'); return; }
+    const client = addProClient(newName.trim(), newCompany.trim() || undefined);
+    setLastAdded(client);
+    setNewName(''); setNewCompany(''); setAddErr('');
+  };
+
+  const openOverrides = (c: ProClient) => {
+    setSelectedClient(c);
+    const inputs: Record<string, string> = {};
+    products.forEach(p => {
+      if (c.priceOverrides[p.id] !== undefined) inputs[p.id] = String(c.priceOverrides[p.id]);
+    });
+    setOverrideInputs(inputs);
+    setCatFilter('All');
+    setOverrideSearch('');
+    setView('overrides');
+  };
+
+  const saveOverride = (clientId: string, productId: string, val: string) => {
+    const num = parseFloat(val);
+    setPriceOverride(clientId, productId, val === '' || isNaN(num) ? null : num);
+  };
+
+  // Overrides view
+  if (view === 'overrides' && selectedClient) {
+    const fresh = proClients.find(c => c.id === selectedClient.id) ?? selectedClient;
+    const filteredProducts = products
+      .filter(p => catFilter === 'All' || p.category === catFilter)
+      .filter(p => !overrideSearch || p.name.toLowerCase().includes(overrideSearch.toLowerCase()));
+
+    return (
+      <div>
+        {/* Back header */}
+        <div className="flex items-center gap-3 mb-4 flex-wrap">
+          <button onClick={() => setView('list')}
+            className="text-sm font-bold px-3 py-2 rounded-sm border"
+            style={{ borderColor: '#e5e5e5', color: COLOR.red }}>
+            ← Retour aux clients
+          </button>
+          <div>
+            <h3 className="font-black text-gray-800">
+              Tarifs Pro — {fresh.name}
+            </h3>
+            <p className="text-xs text-gray-400">
+              Code: <strong style={{ color: COLOR.red }}>{fresh.accessCode}</strong>
+              &nbsp;·&nbsp;{Object.keys(fresh.priceOverrides).length} tarif(s) configuré(s)
+            </p>
+          </div>
+        </div>
+
+        {/* Filters */}
+        <div className="flex flex-wrap gap-2 mb-4 items-center">
+          <input type="text" value={overrideSearch}
+            onChange={e => setOverrideSearch(e.target.value)}
+            placeholder="Filtrer les produits…"
+            className="border px-3 py-1.5 text-sm rounded-sm w-44 focus:outline-none"
+            style={{ borderColor: '#e5e5e5' }} />
+          <div className="flex gap-1.5 flex-wrap">
+            {ALL_CATEGORIES.map(c => (
+              <button key={c} onClick={() => setCatFilter(c)}
+                className="text-xs px-2.5 py-1.5 rounded-sm border font-semibold"
+                style={{
+                  background:  catFilter === c ? COLOR.red : 'white',
+                  color:       catFilter === c ? 'white'   : '#555',
+                  borderColor: '#e5e5e5',
+                }}>
+                {c}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Price matrix */}
+        <div className="bg-white border rounded-sm overflow-hidden" style={{ borderColor: '#e5e5e5' }}>
+          <div className="px-4 py-2.5 text-xs font-black text-white uppercase tracking-wider"
+            style={{ background: COLOR.dark }}>
+            Matrice des prix — saisissez pour écraser le prix standard
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm min-w-max">
+              <thead style={{ background: '#f6f6f6' }}>
+                <tr>
+                  <TableHead>Produit</TableHead>
+                  <TableHead>Catégorie</TableHead>
+                  <TableHead>Prix standard</TableHead>
+                  <TableHead>Tarif Pro (€)</TableHead>
+                  <TableHead>Économie</TableHead>
+                  <TableHead>Action</TableHead>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredProducts.map((p, i) => {
+                  const override = fresh.priceOverrides[p.id];
+                  const inputVal = overrideInputs[p.id] ?? '';
+                  const savings  = override !== undefined ? +(p.price - override).toFixed(2) : 0;
+
+                  return (
+                    <tr key={p.id} className="border-t"
+                      style={{ borderColor: '#f0f0f0', background: i % 2 === 0 ? 'white' : '#fafafa' }}>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2">
+                          <SafeImage src={p.image} alt={p.name} fallbackText={p.name}
+                            className="w-9 h-9 object-cover rounded-sm border flex-shrink-0"
+                            style={{ borderColor: '#e5e5e5' }} />
+                          <span className="font-medium text-gray-800 text-xs max-w-36 truncate">
+                            {p.name}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className="text-xs font-bold px-1.5 py-0.5 rounded-sm text-white"
+                          style={{ background: COLOR.dark }}>{p.category}</span>
+                      </td>
+                      <td className="px-4 py-3 font-black whitespace-nowrap"
+                        style={{ color: COLOR.red }}>
+                        {p.price.toFixed(2)} €
+                      </td>
+                      <td className="px-4 py-3">
+                        <input type="number" min="0" step="0.01"
+                          value={inputVal}
+                          onChange={e => setOverrideInputs(prev => ({ ...prev, [p.id]: e.target.value }))}
+                          onBlur={e => saveOverride(fresh.id, p.id, e.target.value)}
+                          placeholder={p.price.toFixed(2)}
+                          className="border px-2 py-1.5 text-sm rounded-sm w-24 focus:outline-none font-bold"
+                          style={{
+                            borderColor: override !== undefined ? COLOR.green : '#e5e5e5',
+                            color:       override !== undefined ? COLOR.green  : '#888',
+                          }} />
+                      </td>
+                      <td className="px-4 py-3">
+                        {override !== undefined && savings > 0
+                          ? <span className="font-bold text-xs" style={{ color: COLOR.green }}>
+                              -{savings.toFixed(2)} €
+                            </span>
+                          : <span className="text-gray-300 text-xs">—</span>}
+                      </td>
+                      <td className="px-4 py-3">
+                        {override !== undefined && (
+                          <button onClick={() => {
+                            setPriceOverride(fresh.id, p.id, null);
+                            setOverrideInputs(prev => { const n = { ...prev }; delete n[p.id]; return n; });
+                          }} className="text-xs font-medium hover:text-red-600" style={{ color: '#f87171' }}>
+                            Effacer
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── LIST VIEW ────────────────────────────────────────────────────────────────
+  return (
+    <>
+      {/* Add client form */}
+      <div className="bg-white border rounded-sm p-5 mb-5"
+        style={{ borderColor: '#e5e5e5', borderLeft: `4px solid ${COLOR.red}` }}>
+        <h3 className="font-black text-gray-800 mb-4 flex items-center gap-2">
+          <RefreshCw size={16} style={{ color: COLOR.red }} />
+          Créer un nouveau client Pro
+        </h3>
+        <div className="flex flex-wrap gap-3">
+          <div className="flex-1 min-w-40">
+            <label className="text-xs font-black text-gray-500 uppercase block mb-1">
+              Nom du client *
+            </label>
+            <input type="text" value={newName}
+              onChange={e => { setNewName(e.target.value); setAddErr(''); }}
+              placeholder="Restaurant Le Marrakchi"
+              className="w-full border px-3 py-2 text-sm rounded-sm focus:outline-none"
+              style={{ borderColor: addErr ? '#ef4444' : '#e5e5e5' }} />
+          </div>
+          <div className="flex-1 min-w-40">
+            <label className="text-xs font-black text-gray-500 uppercase block mb-1">
+              Société (optionnel)
+            </label>
+            <input type="text" value={newCompany}
+              onChange={e => setNewCompany(e.target.value)}
+              placeholder="SARL Le Marrakchi"
+              className="w-full border px-3 py-2 text-sm rounded-sm focus:outline-none"
+              style={{ borderColor: '#e5e5e5' }} />
+          </div>
+          <div className="flex items-end">
+            <button onClick={handleAddClient}
+              className="flex items-center gap-2 text-white font-black px-5 py-2 rounded-sm text-sm"
+              style={{ background: COLOR.red }}>
+              <Key size={14} /> Générer le code
+            </button>
+          </div>
+        </div>
+        {addErr && <p className="text-red-500 text-xs mt-2">{addErr}</p>}
+
+        {/* Last generated */}
+        {lastAdded && (
+          <div className="mt-3 p-3 rounded-sm border flex items-center gap-3"
+            style={{ background: '#fff8f8', borderColor: `${COLOR.red}40` }}>
+            <Key size={16} style={{ color: COLOR.red }} />
+            <div className="text-sm">
+              Client <strong>{lastAdded.name}</strong> créé —&nbsp;
+              Code : <strong className="font-black text-lg tracking-widest"
+                style={{ color: COLOR.red }}>{lastAdded.accessCode}</strong>
+            </div>
+            <button onClick={() => setLastAdded(null)}
+              className="ml-auto text-gray-400 text-xs hover:text-gray-600">✕</button>
+          </div>
+        )}
+      </div>
+
+      {/* Client table */}
+      <div className="bg-white border rounded-sm overflow-hidden" style={{ borderColor: '#e5e5e5' }}>
+        <div className="px-4 py-3 border-b flex items-center justify-between"
+          style={{ borderColor: '#e5e5e5' }}>
+          <span className="font-black text-gray-800">
+            {proClients.length} client{proClients.length !== 1 ? 's' : ''} Pro
+          </span>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm min-w-max">
+            <thead style={{ background: '#f6f6f6' }}>
+              <tr>
+                <TableHead>Client</TableHead>
+                <TableHead>Société</TableHead>
+                <TableHead>Code Accès</TableHead>
+                <TableHead>Tarifs</TableHead>
+                <TableHead>Commandes</TableHead>
+                <TableHead>Créé le</TableHead>
+                <TableHead>Actions</TableHead>
+              </tr>
+            </thead>
+            <tbody>
+              {proClients.map((c, i) => (
+                <tr key={c.id} className="border-t"
+                  style={{ borderColor: '#f0f0f0', background: i % 2 === 0 ? 'white' : '#fafafa' }}>
+                  <td className="px-4 py-3 font-semibold text-gray-800">{c.name}</td>
+                  <td className="px-4 py-3 text-gray-500 text-xs">{c.company ?? '—'}</td>
+                  <td className="px-4 py-3">
+                    <span className="font-black tracking-widest text-base"
+                      style={{ color: COLOR.red }}>{c.accessCode}</span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className="text-xs font-bold px-2 py-0.5 rounded-sm"
+                      style={{ background: '#fff8f8', color: COLOR.red }}>
+                      {Object.keys(c.priceOverrides).length} tarif{Object.keys(c.priceOverrides).length !== 1 ? 's' : ''}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-gray-500 text-xs">{c.purchaseHistory.length}</td>
+                  <td className="px-4 py-3 text-gray-400 text-xs">{c.createdAt}</td>
+                  <td className="px-4 py-3">
+                    <div className="flex gap-1">
+                      <button onClick={() => openOverrides(c)}
+                        className="p-1.5 rounded-sm hover:bg-red-50" style={{ color: COLOR.red }}
+                        title="Gérer les tarifs">
+                        <Edit2 size={14} />
+                      </button>
+                      <button
+                        onClick={() => { if (window.confirm(`Supprimer ${c.name} ?`)) deleteProClient(c.id); }}
+                        className="p-1.5 rounded-sm hover:bg-red-50 text-red-400" title="Supprimer">
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+              {proClients.length === 0 && (
+                <tr>
+                  <td colSpan={7} className="text-center py-12 text-gray-400">
+                    <Users size={36} className="mx-auto mb-2" style={{ color: '#e5e5e5' }} />
+                    <p>Aucun client Pro. Créez-en un ci-dessus.</p>
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// DASHBOARD SHELL
+// ═══════════════════════════════════════════════════════════════════════════════
+type Tab = 'products' | 'pro-clients';
+
+export default function AdminDashboard() {
+  const { logout } = useApp();
+  const [tab, setTab] = useState<Tab>('products');
+
+  return (
+    <div style={{ background: '#f6f6f6', minHeight: '100vh' }}>
+
+      {/* Admin header */}
+      <div className="text-white px-4 py-3 sticky top-0 z-20"
+        style={{ background: COLOR.dark, borderBottom: `3px solid ${COLOR.red}` }}>
+        <div className="max-w-6xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <LogoLight size={34} />
+            <div className="h-5 w-px mx-1 opacity-20 bg-white" />
+            <span className="text-gray-400 text-sm font-semibold">Administration</span>
+          </div>
+          <button onClick={logout}
+            className="flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-sm"
+            style={{ background: 'rgba(255,255,255,.10)', border: '1px solid rgba(255,255,255,.15)' }}>
+            <LogOut size={13} /> Déconnexion
+          </button>
+        </div>
+      </div>
+
+      <div className="max-w-6xl mx-auto px-4 py-6">
+
+        {/* Tab nav */}
+        <div className="flex gap-2 mb-6 border-b" style={{ borderColor: '#e5e5e5' }}>
+          {([
+            { id: 'products',    label: '📦 Produits'   },
+            { id: 'pro-clients', label: '🏢 Clients Pro' },
+          ] as { id: Tab; label: string }[]).map(t => (
+            <button key={t.id} onClick={() => setTab(t.id)}
+              className="px-5 py-2.5 text-sm font-bold border-b-2 -mb-px"
+              style={{
+                borderColor: tab === t.id ? COLOR.red : 'transparent',
+                color:       tab === t.id ? COLOR.red : '#888',
+              }}>
+              {t.label}
+            </button>
+          ))}
+        </div>
+
+        {tab === 'products'    && <ProductsTab />}
+        {tab === 'pro-clients' && <ProClientsTab />}
+
+        <div className="pb-10" />
+      </div>
+    </div>
+  );
+}
+</file>
+
+<file path="src/pages/AdminLogin.tsx">
+import { useState } from 'react';
+import { useApp } from '../context/AppContext';
+import { COLOR, BRAND_NAME } from '../data/constants';
+import { LogoLight } from '../components/Logo';
+
+export default function AdminLogin() {
+  const { login, navigate } = useApp();
+  const [pw,      setPw]      = useState('');
+  const [error,   setError]   = useState('');
+  const [loading, setLoading] = useState(false);
+  const [show,    setShow]    = useState(false);
+
+  const handleLogin = () => {
+    if (!pw.trim()) { setError('Veuillez entrer le mot de passe.'); return; }
+    setLoading(true);
+    setTimeout(() => {
+      if (!login(pw)) { setError('Mot de passe incorrect.'); setPw(''); }
+      setLoading(false);
+    }, 300);
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center px-4"
+      style={{ background: '#f6f6f6' }}>
+      <div className="w-full max-w-sm">
+
+        {/* Logo */}
+        <div className="flex justify-center mb-6">
+          <LogoLight size={44} />
+        </div>
+
+        <div className="bg-white border rounded-sm p-6 shadow-sm"
+          style={{ borderColor: '#e5e5e5', borderTop: `4px solid ${COLOR.red}` }}>
+
+          <div className="text-center mb-5">
+            <div className="w-12 h-12 rounded-sm flex items-center justify-center mx-auto mb-3"
+              style={{ background: COLOR.dark }}>
+              <span className="text-2xl">🔐</span>
+            </div>
+            <h1 className="font-black text-gray-800 text-lg">Administration</h1>
+            <p className="text-xs text-gray-400 mt-1">{BRAND_NAME} — Accès réservé</p>
+          </div>
+
+          <div className="mb-4">
+            <label htmlFor="admin-pw"
+              className="text-xs font-black text-gray-500 uppercase tracking-wide block mb-1.5">
+              Mot de passe
+            </label>
+            <div className="relative">
+              <input id="admin-pw" type={show ? 'text' : 'password'} value={pw}
+                onChange={e => { setPw(e.target.value); setError(''); }}
+                onKeyDown={e => e.key === 'Enter' && handleLogin()}
+                placeholder="••••••••••••••••"
+                className="w-full border px-3 py-2.5 pr-20 text-sm rounded-sm focus:outline-none focus:ring-2"
+                style={{ borderColor: error ? '#ef4444' : '#e5e5e5' }} />
+              <button onClick={() => setShow(s => !s)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium"
+                style={{ color: COLOR.red }}>
+                {show ? 'Masquer' : 'Afficher'}
+              </button>
+            </div>
+            {error && <p className="text-red-500 text-xs mt-1.5">⚠ {error}</p>}
+          </div>
+
+          <button onClick={handleLogin} disabled={loading}
+            className="w-full text-white font-black py-2.5 rounded-sm text-sm mb-3"
+            style={{ background: loading ? '#94a3b8' : COLOR.red }}>
+            {loading ? 'Vérification…' : 'Se connecter'}
+          </button>
+
+          <button onClick={() => navigate('home')}
+            className="w-full text-xs py-1 hover:text-gray-600" style={{ color:'#9ca3af' }}>
+            ← Retour au site
+          </button>
+        </div>
+
+        <p className="text-center text-xs mt-4" style={{ color:'#d1d5db' }}>
+          Page non référencée dans la navigation.
+        </p>
+      </div>
+    </div>
+  );
+}
+</file>
+
+<file path="src/pages/HomePage.tsx">
+import { useMemo } from 'react';
+import { Tag, Sparkles, Star, TrendingUp, Zap } from 'lucide-react';
+import { useApp } from '../context/AppContext';
+import { PRODUCT_CATEGORIES, CAT_ICON, COLOR, BRAND_NAME } from '../data/constants';
+import ProductCard  from '../components/ProductCard';
+import TrustBanner  from '../components/TrustBanner';
+import type { Product } from '../types';
+
+// ── Reusable section heading ──────────────────────────────────────────────────
+function SectionHeader({
+  icon: Icon, label, sub, accent, onViewAll,
+}: {
+  icon: React.ElementType; label: string; sub?: string; accent: string; onViewAll?: () => void;
+}) {
+  return (
+    <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center gap-2 pl-3 border-l-4" style={{ borderColor: accent }}>
+        <Icon size={18} style={{ color: accent }} />
+        <div>
+          <h2 className="font-black text-gray-800 text-lg leading-none">{label}</h2>
+          {sub && <p className="text-xs text-gray-400 mt-0.5">{sub}</p>}
+        </div>
+      </div>
+      {onViewAll && (
+        <button onClick={onViewAll} className="text-sm font-semibold" style={{ color: COLOR.red }}>
+          Voir tout →
+        </button>
+      )}
+    </div>
+  );
+}
+
+// ── Catalogue section with coloured header bar ────────────────────────────────
+function CatalogueSection({
+  icon: Icon, title, sub, accent, badge, items, onViewAll,
+}: {
+  icon: React.ElementType; title: string; sub: string; accent: string;
+  badge?: string; items: Product[]; onViewAll: () => void;
+}) {
+  if (items.length === 0) return null;
+  return (
+    <section className="max-w-7xl mx-auto px-4 pb-8">
+      <div className="rounded-sm overflow-hidden mb-4">
+        <div className="flex items-center justify-between px-4 py-3" style={{ background: accent }}>
+          <div className="flex items-center gap-2 text-white">
+            <Icon size={18} />
+            <div>
+              <div className="font-black text-base leading-none">{title}</div>
+              <div style={{ fontSize: '11px', opacity: 0.85 }} className="mt-0.5">{sub}</div>
+            </div>
+          </div>
+          {badge && (
+            <span className="bg-white text-xs font-black px-2 py-1 rounded-sm"
+              style={{ color: accent }}>
+              {badge}
+            </span>
+          )}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+        {items.map(p => <ProductCard key={p.id} product={p} />)}
+      </div>
+
+      <div className="text-right mt-3">
+        <button onClick={onViewAll} className="text-sm font-semibold" style={{ color: COLOR.red }}>
+          Voir toutes les offres →
+        </button>
+      </div>
+    </section>
+  );
+}
+
+// ── Pro sections ──────────────────────────────────────────────────────────────
+function ProSection({
+  title, items, icon: Icon,
+}: {
+  title: string; items: Product[]; icon: React.ElementType;
+}) {
+  if (items.length === 0) return null;
+  return (
+    <section className="max-w-7xl mx-auto px-4 pb-6">
+      <div className="rounded-sm overflow-hidden border mb-4"
+        style={{ borderColor: COLOR.green }}>
+        <div className="flex items-center gap-2 px-4 py-2.5" style={{ background: '#f0faf0' }}>
+          <Icon size={16} style={{ color: COLOR.green }} />
+          <span className="font-black text-sm" style={{ color: COLOR.green }}>{title}</span>
+          <span className="text-xs px-1.5 py-0.5 rounded-sm font-bold text-white ml-1"
+            style={{ background: COLOR.green }}>★ PRO</span>
+        </div>
+      </div>
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+        {items.map(p => <ProductCard key={p.id} product={p} />)}
+      </div>
+    </section>
+  );
+}
+
+// ── Main page ─────────────────────────────────────────────────────────────────
+export default function HomePage() {
+  const { products, navigate, activeProClient } = useApp();
+
+  // Catalogues
+  const promos      = useMemo(() =>
+    products.filter(p => p.inStock && p.discount && p.discount > 0).slice(0, 10), [products]);
+  const nouveautes  = useMemo(() =>
+    products.filter(p => p.inStock && p.isNew)
+      .sort((a, b) => (b.createdAt ?? '').localeCompare(a.createdAt ?? '')).slice(0, 10),
+    [products]);
+  const selection   = useMemo(() =>
+    products.filter(p => p.inStock && p.featured).slice(0, 10), [products]);
+
+  // Pro sections
+  const frequentlyBought = useMemo(() => {
+    if (!activeProClient) return [];
+    const hist = activeProClient.purchaseHistory;
+    if (hist.length > 0) {
+      const counts: Record<string, number> = {};
+      hist.forEach(o => o.items.forEach(i => {
+        counts[i.productId] = (counts[i.productId] || 0) + i.quantity;
+      }));
+      return products
+        .filter(p => counts[p.id] && p.inStock)
+        .sort((a, b) => (counts[b.id] || 0) - (counts[a.id] || 0))
+        .slice(0, 5);
+    }
+    // Fallback: products with overrides
+    const ids = Object.keys(activeProClient.priceOverrides);
+    return products.filter(p => ids.includes(p.id) && p.inStock).slice(0, 5);
+  }, [activeProClient, products]);
+
+  const recommended = useMemo(() => {
+    if (!activeProClient) return [];
+    return [...products].filter(p => p.inStock).sort(() => Math.random() - 0.5).slice(0, 5);
+  }, [activeProClient]); // eslint-disable-line
+
+  // Per-category rows
+  const catSections = useMemo(() =>
+    PRODUCT_CATEGORIES.map(cat => ({
+      cat,
+      items: products.filter(p => p.category === cat && p.inStock).slice(0, 5),
+    })).filter(s => s.items.length > 0),
+    [products],
+  );
+
+  return (
+    <div style={{ background: COLOR.grayBg, minHeight: 'calc(100vh - 120px)' }}>
+
+      {/* ── Hero ───────────────────────────────────────────────────────── */}
+      <div className="ef-hero-gradient">
+        <div className="max-w-7xl mx-auto px-4 py-14 flex items-center justify-between gap-6">
+          <div className="text-white max-w-lg">
+
+            {/* Badge */}
+            <div className="text-xs font-black mb-3 px-3 py-1 inline-flex items-center gap-1.5 rounded-sm tracking-wide"
+              style={{ background: COLOR.red }}>
+              <Zap size={12} /> LIVRAISON EN 30 MIN
+            </div>
+
+            <h1 className="text-3xl md:text-4xl font-black leading-tight mb-3">
+              Vos courses livrées
+              <br />
+              <span style={{ color: COLOR.red }}>express</span>
+              <span className="text-white"> à domicile.</span>
+            </h1>
+
+            <p className="text-gray-400 text-sm mb-6 leading-relaxed">
+              <span style={{ color: COLOR.green }}>Fraîcheur garantie</span> · Produits frais sélectionnés
+              <br />Commandez avant 14h → livré aujourd'hui
+            </p>
+
+            <div className="flex gap-3 flex-wrap">
+              <button onClick={() => navigate('products')}
+                className="text-white font-black px-6 py-3 rounded-sm text-sm"
+                style={{ background: COLOR.red }}>
+                Commander maintenant →
+              </button>
+              <button onClick={() => navigate('products')}
+                className="font-bold px-6 py-3 rounded-sm text-sm text-white"
+                style={{ background: 'rgba(255,255,255,.10)', border: '1px solid rgba(255,255,255,.2)' }}>
+                Voir nos promotions
+              </button>
+            </div>
+          </div>
+
+          {/* Decorative */}
+          <div className="hidden lg:flex flex-col items-center gap-1 opacity-15 select-none">
+            <div style={{ fontSize: '90px' }}>🚗</div>
+            <div className="flex gap-2" style={{ fontSize: '40px' }}>🍎 🥦 🥛</div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Trust banner ───────────────────────────────────────────────── */}
+      <TrustBanner />
+
+      {/* ── Category quick links ───────────────────────────────────────── */}
+      <div className="max-w-7xl mx-auto px-4 py-6">
+        <div className="grid grid-cols-4 md:grid-cols-9 gap-2">
+          {PRODUCT_CATEGORIES.map(cat => (
+            <button key={cat} onClick={() => navigate('products')}
+              className="bg-white border rounded-sm p-3 flex flex-col items-center gap-1.5 hover:shadow-sm"
+              style={{ borderColor: COLOR.border }}>
+              <span className="text-2xl" aria-hidden="true">{CAT_ICON[cat]}</span>
+              <span className="text-xs font-semibold text-gray-700 leading-tight text-center">{cat}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* ── PRO SECTIONS ───────────────────────────────────────────────── */}
+      {activeProClient && (
+        <>
+          <ProSection
+            title="Ce que vous achetez fréquemment"
+            items={frequentlyBought}
+            icon={TrendingUp}
+          />
+          <ProSection
+            title="Recommandé pour votre activité"
+            items={recommended}
+            icon={Star}
+          />
+        </>
+      )}
+
+      {/* ═══════════════════════════════════════════════════════════════ */}
+      {/* CATALOGUE SECTIONS                                              */}
+      {/* ═══════════════════════════════════════════════════════════════ */}
+
+      {/* Promotions */}
+      <CatalogueSection
+        icon={Tag}      accent={COLOR.red}
+        title="🔥 Nos Promotions"
+        sub="Économisez sur une sélection de produits"
+        badge={`${promos.length} offres`}
+        items={promos}
+        onViewAll={() => navigate('products')}
+      />
+
+      {/* Nouveautés */}
+      <CatalogueSection
+        icon={Sparkles} accent="#7c3aed"
+        title="✨ Nouveautés"
+        sub="Les dernières arrivées chez Express Food"
+        badge="Vient d'arriver"
+        items={nouveautes}
+        onViewAll={() => navigate('products')}
+      />
+
+      {/* Sélection du moment */}
+      <CatalogueSection
+        icon={Star}     accent={COLOR.green}
+        title="⭐ Sélection du Moment"
+        sub="Notre coup de cœur de la semaine"
+        badge={`Choix ${BRAND_NAME}`}
+        items={selection}
+        onViewAll={() => navigate('products')}
+      />
+
+      {/* ── Per-category rows ──────────────────────────────────────────── */}
+      {catSections.map(({ cat, items }) => (
+        <section key={cat} className="max-w-7xl mx-auto px-4 pb-8">
+          <SectionHeader
+            icon={() => <span className="text-xl">{CAT_ICON[cat]}</span>}
+            label={cat}
+            accent={COLOR.red}
+            onViewAll={() => navigate('products')}
+          />
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+            {items.map(p => <ProductCard key={p.id} product={p} />)}
+          </div>
+        </section>
+      ))}
+
+      {/* ── Bottom CTA strip ───────────────────────────────────────────── */}
+      <div className="max-w-7xl mx-auto px-4 pb-8">
+        <div className="rounded-sm overflow-hidden flex flex-col md:flex-row"
+          style={{ background: COLOR.dark }}>
+          <div className="flex-1 p-6 text-white">
+            <div className="text-xs font-black mb-2 px-2 py-0.5 inline-block rounded-sm"
+              style={{ background: COLOR.red }}>NOUVEAU CLIENT</div>
+            <h3 className="font-black text-xl mb-1">
+              -10 € sur votre <span style={{ color: COLOR.red }}>première commande</span>
+            </h3>
+            <p className="text-gray-400 text-sm">Inscrivez-vous à notre newsletter et recevez votre coupon.</p>
+          </div>
+          <div className="flex items-center px-6 py-4 border-t md:border-t-0 md:border-l"
+            style={{ borderColor: 'rgba(255,255,255,.08)' }}>
+            <button onClick={() => navigate('products')}
+              className="text-white font-black px-6 py-2.5 rounded-sm text-sm whitespace-nowrap"
+              style={{ background: COLOR.green }}>
+              Commander maintenant →
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+</file>
+
+<file path="src/pages/ProductsPage.tsx">
+import { useState, useMemo, useEffect } from 'react';
+import { Package, ChevronDown, X } from 'lucide-react';
+import { useApp } from '../context/AppContext';
+import FilterSidebar from '../components/FilterSidebar';
+import ProductCard   from '../components/ProductCard';
+import { COLOR, ALL_CATEGORIES } from '../data/constants';
+import type { PriceRange, SortOption } from '../types';
+
+export default function ProductsPage() {
+  const { products, navigate, searchQuery, setSearchQuery, activeProClient } = useApp();
+
+  const maxPrice = useMemo(
+    () => Math.ceil(Math.max(...products.map(p => p.price), 20)),
+    [products],
+  );
+
+  const [selectedCat,    setSelectedCat]    = useState('All');
+  const [priceRange,     setPriceRange]     = useState<PriceRange>([0, maxPrice]);
+  const [onSaleOnly,     setOnSaleOnly]     = useState(false);
+  const [localSearch,    setLocalSearch]    = useState(searchQuery);
+  const [sort,           setSort]           = useState<SortOption>('default');
+  const [mobileCatOpen,  setMobileCatOpen]  = useState(false);
+
+  useEffect(() => { setLocalSearch(searchQuery); }, [searchQuery]);
+
+  const clearSearch = () => { setLocalSearch(''); setSearchQuery(''); };
+
+  const filtered = useMemo(() => {
+    const q = localSearch.toLowerCase().trim();
+    let list = products
+      .filter(p => selectedCat === 'All' || p.category === selectedCat)
+      .filter(p => p.price >= priceRange[0] && p.price <= priceRange[1])
+      .filter(p => !onSaleOnly || (p.discount && p.discount > 0))
+      .filter(p =>
+        !q ||
+        p.name.toLowerCase().includes(q) ||
+        p.description.toLowerCase().includes(q) ||
+        p.category.toLowerCase().includes(q) ||
+        (p.tags ?? []).some(t => t.toLowerCase().includes(q))
+      );
+
+    if (sort === 'price-asc')  list = [...list].sort((a, b) => a.price - b.price);
+    if (sort === 'price-desc') list = [...list].sort((a, b) => b.price - a.price);
+    if (sort === 'name')       list = [...list].sort((a, b) => a.name.localeCompare(b.name));
+    return list;
+  }, [products, selectedCat, priceRange, onSaleOnly, localSearch, sort]);
+
+  const resetAll = () => {
+    setSelectedCat('All');
+    setPriceRange([0, maxPrice]);
+    setOnSaleOnly(false);
+    setLocalSearch('');
+    setSearchQuery('');
+  };
+
+  const hasFilter = selectedCat !== 'All' || priceRange[0] > 0 ||
+    priceRange[1] < maxPrice || onSaleOnly || localSearch.trim().length > 0;
+
+  return (
+    <div style={{ background: COLOR.grayBg, minHeight: 'calc(100vh - 120px)' }}>
+      <div className="max-w-7xl mx-auto px-4 py-4">
+
+        {/* ── Breadcrumb ────────────────────────────────────────────── */}
+        <nav className="text-xs text-gray-400 mb-4 flex items-center gap-1.5 flex-wrap">
+          <button onClick={() => navigate('home')} className="hover:underline"
+            style={{ color: COLOR.red }}>Accueil</button>
+          <span>/</span>
+          <span className="text-gray-600">Tous les produits</span>
+          {selectedCat !== 'All' && (
+            <><span>/</span>
+            <span className="font-medium" style={{ color: COLOR.red }}>{selectedCat}</span></>
+          )}
+          {localSearch && (
+            <><span>/</span>
+            <span className="font-medium text-gray-600">"{localSearch}"</span></>
+          )}
+        </nav>
+
+        {/* ── Search chip ───────────────────────────────────────────── */}
+        {localSearch && (
+          <div className="flex items-center gap-2 mb-3 flex-wrap">
+            <span className="text-sm text-gray-600">Résultats pour :</span>
+            <div className="flex items-center gap-1 px-2.5 py-1 rounded-sm text-sm font-semibold text-white"
+              style={{ background: COLOR.red }}>
+              "{localSearch}"
+              <button onClick={clearSearch} className="ml-1.5 opacity-80 hover:opacity-100">
+                <X size={12} />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ── Pro pricing notice ────────────────────────────────────── */}
+        {activeProClient && (
+          <div className="mb-3 px-3 py-2 rounded-sm text-xs font-semibold flex items-center gap-2"
+            style={{ background: '#f0faf0', border: `1px solid ${COLOR.green}40`, color: COLOR.green }}>
+            ★ Tarifs professionnels actifs — {activeProClient.name}
+          </div>
+        )}
+
+        {/* ── Mobile category drawer ────────────────────────────────── */}
+        <div className="md:hidden mb-3">
+          <button onClick={() => setMobileCatOpen(v => !v)}
+            className="flex items-center justify-between w-full text-white text-sm font-bold px-4 py-2.5 rounded-sm"
+            style={{ background: COLOR.dark }}>
+            <span>📂 {selectedCat === 'All' ? 'Toutes les catégories' : selectedCat}</span>
+            <ChevronDown size={14} />
+          </button>
+          {mobileCatOpen && (
+            <div className="bg-white border rounded-sm mt-1" style={{ borderColor: '#e5e5e5' }}>
+              {ALL_CATEGORIES.map(c => (
+                <button key={c}
+                  onClick={() => { setSelectedCat(c); setMobileCatOpen(false); }}
+                  className="block w-full text-left px-4 py-2.5 text-sm border-b last:border-0"
+                  style={{
+                    borderColor: '#f0f0f0',
+                    color:       selectedCat === c ? COLOR.red : '#444',
+                    fontWeight:  selectedCat === c ? 700 : 400,
+                  }}>
+                  {c === 'All' ? 'Tous les produits' : c}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="flex gap-5">
+          {/* ── Sidebar ───────────────────────────────────────────────── */}
+          <FilterSidebar
+            products={products}
+            selectedCat={selectedCat}   setSelectedCat={setSelectedCat}
+            priceRange={priceRange}     setPriceRange={setPriceRange}
+            onSaleOnly={onSaleOnly}     setOnSaleOnly={setOnSaleOnly}
+            maxPrice={maxPrice}
+          />
+
+          {/* ── Main ──────────────────────────────────────────────────── */}
+          <div className="flex-1 min-w-0">
+
+            {/* Toolbar */}
+            <div className="bg-white border rounded-sm px-3 py-2.5 flex flex-wrap
+                            items-center justify-between gap-2 mb-3"
+              style={{ borderColor: '#e5e5e5' }}>
+
+              <div className="flex items-center gap-2 flex-wrap">
+                <p className="text-sm text-gray-500">
+                  <span className="font-black text-gray-800 text-base">{filtered.length}</span>
+                  {' '}produit{filtered.length !== 1 ? 's' : ''} trouvé{filtered.length !== 1 ? 's' : ''}
+                  {selectedCat !== 'All' && (
+                    <span className="font-medium" style={{ color: COLOR.red }}>
+                      &nbsp;· {selectedCat}
+                    </span>
+                  )}
+                </p>
+                {hasFilter && (
+                  <button onClick={resetAll}
+                    className="text-xs px-2 py-1 rounded-sm border font-medium"
+                    style={{ borderColor:'#fca5a5', color:'#ef4444', background:'#fef2f2' }}>
+                    Réinitialiser
+                  </button>
+                )}
+              </div>
+
+              <div className="flex items-center gap-2 flex-wrap">
+                {/* Inline search */}
+                <div className="relative">
+                  <input type="text" value={localSearch}
+                    onChange={e => setLocalSearch(e.target.value)}
+                    onKeyDown={e => e.key === 'Escape' && clearSearch()}
+                    placeholder="Filtrer les résultats…"
+                    className="border pl-3 pr-7 py-1.5 text-sm rounded-sm w-44 focus:outline-none"
+                    style={{ borderColor: '#e5e5e5' }} />
+                  {localSearch && (
+                    <button onClick={clearSearch}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400">
+                      <X size={12} />
+                    </button>
+                  )}
+                </div>
+
+                {/* Sort */}
+                <select value={sort} onChange={e => setSort(e.target.value as SortOption)}
+                  className="border px-3 py-1.5 text-sm rounded-sm focus:outline-none bg-white"
+                  style={{ borderColor: '#e5e5e5' }}>
+                  <option value="default">Tri par défaut</option>
+                  <option value="price-asc">Prix croissant</option>
+                  <option value="price-desc">Prix décroissant</option>
+                  <option value="name">Nom A–Z</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Grid / empty */}
+            {filtered.length === 0 ? (
+              <div className="bg-white border rounded-sm p-16 text-center"
+                style={{ borderColor: '#e5e5e5' }}>
+                <Package size={48} className="mx-auto mb-4" style={{ color: '#e5e5e5' }} />
+                <p className="font-black text-gray-400 text-lg mb-1">Aucun produit trouvé</p>
+                {localSearch && (
+                  <p className="text-sm text-gray-400 mb-3">
+                    Aucun résultat pour "{localSearch}"
+                  </p>
+                )}
+                <button onClick={resetAll}
+                  className="text-sm font-bold px-5 py-2 rounded-sm text-white"
+                  style={{ background: COLOR.red }}>
+                  Réinitialiser les filtres
+                </button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+                {filtered.map(p => <ProductCard key={p.id} product={p} />)}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+</file>
+
+<file path="src/types/index.ts">
+// ── Product ───────────────────────────────────────────────────────────────────
+
+export type Category =
+  | 'Fruits' | 'Vegetables' | 'Dairy' | 'Bakery'
+  | 'Meat' | 'Beverages' | 'Frozen' | 'Pantry' | 'Snacks';
+
+export interface Product {
+  id:          string;
+  name:        string;
+  category:    Category | string;
+  price:       number;
+  unit:        string;
+  image:       string;
+  variantId:   string;
+  inStock:     boolean;
+  description: string;
+  discount?:   number;     // e.g. 15 = 15% off
+  isNew?:      boolean;
+  featured?:   boolean;
+  tags?:       string[];
+  createdAt?:  string;     // ISO date
+}
+
+// ── Cart ─────────────────────────────────────────────────────────────────────
+
+export interface CartItem extends Product {
+  quantity:       number;
+  effectivePrice: number;
+}
+
+// ── Pro Client ────────────────────────────────────────────────────────────────
+
+export interface PriceOverrides { [productId: string]: number; }
+
+export interface OrderLineItem {
+  productId: string; name: string; unit: string;
+  quantity: number; unitPrice: number; total: number;
+}
+
+export interface OrderRecord {
+  orderId: string; date: string; clientName: string;
+  phone: string; email: string; items: OrderLineItem[]; subtotal: number;
+}
+
+export interface ProClient {
+  id: string; name: string; company?: string;
+  accessCode: string; priceOverrides: PriceOverrides;
+  purchaseHistory: OrderRecord[]; createdAt: string;
+}
+
+// ── Context ───────────────────────────────────────────────────────────────────
+
+export interface AppContextType {
+  products: Product[];
+  addProduct: (p: Omit<Product, 'id'>) => void;
+  updateProduct: (p: Product) => void;
+  deleteProduct: (id: string) => void;
+  cart: CartItem[];
+  cartOpen: boolean;
+  setCartOpen: (v: boolean) => void;
+  addToCart: (product: Product) => void;
+  removeFromCart: (id: string) => void;
+  updateQty: (id: string, qty: number) => void;
+  clearCart: () => void;
+  cartTotal: number;
+  cartCount: number;
+  priceFor: (product: Product) => number;
+  effectivePrice: (product: Product) => number;
+  page: PageKey;
+  navigate: (p: PageKey) => void;
+  searchQuery: string;
+  setSearchQuery: (q: string) => void;
+  submitSearch: (q: string) => void;
+  adminAuth: boolean;
+  login: (pw: string) => boolean;
+  logout: () => void;
+  proClients: ProClient[];
+  addProClient: (name: string, company?: string) => ProClient;
+  updateProClient: (c: ProClient) => void;
+  deleteProClient: (id: string) => void;
+  setPriceOverride: (clientId: string, productId: string, price: number | null) => void;
+  activeProClient: ProClient | null;
+  loginProClient: (code: string) => boolean;
+  logoutProClient: () => void;
+  recordOrder: (clientId: string, order: OrderRecord) => void;
+  proLoginOpen: boolean;
+  setProLoginOpen: (v: boolean) => void;
+  checkoutOpen: boolean;
+  setCheckoutOpen: (v: boolean) => void;
+  checkout: () => void;
+}
+
+export type PageKey = 'home' | 'products' | 'admin';
+export type SortOption = 'default' | 'price-asc' | 'price-desc' | 'name';
+export type PriceRange = [number, number];
+export type ImageInputMode = 'url' | 'upload';
+
+export interface ProductFormState {
+  name: string; category: string; price: string; unit: string;
+  image: string; variantId: string; inStock: boolean; description: string;
+  discount: string; isNew: boolean; featured: boolean;
+}
+
+export interface PdfOrderData {
+  orderId: string; clientName: string; phone: string; email: string;
+  date: string; items: OrderLineItem[]; subtotal: number;
+  isProClient: boolean; proClientName?: string;
+}
+</file>
+
+<file path="src/utils/webhookService.ts">
+// src/utils/webhookService.ts
+// Sends a Discord webhook notification on every finalized order.
+// Discord supports multipart/form-data: JSON payload_json + file attachment in one request.
+
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+export interface OrderItem {
+  name: string;
+  quantity: number;
+  unitPrice: number;
+  totalPrice: number;
+}
+
+export interface ClientInfo {
+  name: string;
+  phone: string;
+  email: string;
+  isProClient: boolean;
+  proClientName?: string;
+}
+
+export interface WebhookPayload {
+  orderRef: string;
+  timestamp: string;
+  client: ClientInfo;
+  items: OrderItem[];
+  orderTotal: number;
+  currency: string;
+}
+
+// ─── Admin PDF (items + quantities only, NO prices) ───────────────────────────
+
+export function generateAdminPdfBlob(payload: WebhookPayload): Blob {
+  const doc   = new jsPDF({ unit: "mm", format: "a4" });
+  const red   = "#E31E24";
+  const green = "#2D8A2D";
+  const dark  = "#111111";
+  const w     = doc.internal.pageSize.getWidth();
+
+  // Header stripes
+  doc.setFillColor(red);
+  doc.rect(0, 0, w, 22, "F");
+  doc.setFillColor(green);
+  doc.rect(0, 22, w, 5, "F");
+  doc.setTextColor("#FFFFFF");
+  doc.setFontSize(16);
+  doc.setFont("helvetica", "bold");
+  doc.text("Express Food — Bon de commande (Admin)", w / 2, 14, { align: "center" });
+
+  // Order ref box
+  doc.setFillColor("#F5F5F5");
+  doc.roundedRect(14, 32, w - 28, 18, 3, 3, "F");
+  doc.setTextColor(dark);
+  doc.setFontSize(11);
+  doc.setFont("helvetica", "bold");
+  doc.text(`Référence : #EF-${payload.orderRef}`, 20, 40);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
+  doc.setTextColor("#555555");
+  doc.text(`Date : ${new Date(payload.timestamp).toLocaleString("fr-FR")}`, 20, 47);
+
+  // Client block
+  doc.setFontSize(10);
+  doc.setTextColor(dark);
+  doc.setFont("helvetica", "bold");
+  doc.text("Client", 14, 60);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
+  doc.setTextColor("#333333");
+  doc.text(`Nom : ${payload.client.name}`, 14, 67);
+  doc.text(`Téléphone : ${payload.client.phone}`, 14, 73);
+  if (payload.client.email) doc.text(`Email : ${payload.client.email}`, 14, 79);
+  if (payload.client.isProClient && payload.client.proClientName) {
+    doc.setTextColor(green);
+    doc.setFont("helvetica", "bold");
+    doc.text(`Compte Pro : ${payload.client.proClientName}`, 14, 85);
+  }
+
+  // Items table — NO price columns
+  doc.setTextColor(dark);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
+  doc.text("Articles commandés", 14, 96);
+
+  autoTable(doc, {
+    startY: 100,
+    head: [["Article", "Quantité"]],
+    body: payload.items.map((item) => [item.name, item.quantity.toString()]),
+    headStyles: { fillColor: red, textColor: "#FFFFFF", fontStyle: "bold", fontSize: 9 },
+    bodyStyles: { fontSize: 9, textColor: dark },
+    alternateRowStyles: { fillColor: "#FAFAFA" },
+    columnStyles: {
+      0: { cellWidth: "auto" },
+      1: { cellWidth: 30, halign: "center" },
+    },
+    margin: { left: 14, right: 14 },
+  });
+
+  const finalY = (doc as any).lastAutoTable.finalY + 10;
+  doc.setDrawColor(green);
+  doc.setLineWidth(0.5);
+  doc.line(14, finalY, w - 14, finalY);
+  doc.setFontSize(8);
+  doc.setTextColor("#888888");
+  doc.setFont("helvetica", "normal");
+  doc.text(
+    "Document réservé à l'usage interne — Express Food",
+    w / 2,
+    finalY + 6,
+    { align: "center" }
+  );
+
+  return doc.output("blob");
+}
+
+// ─── Discord embed builder ────────────────────────────────────────────────────
+
+function buildDiscordPayload(payload: WebhookPayload): object {
+  const itemLines = payload.items
+    .map(
+      (i) =>
+        `• **${i.name}** × ${i.quantity} — ${i.totalPrice.toFixed(2)} ${payload.currency}`
+    )
+    .join("\n");
+
+  const proLine =
+    payload.client.isProClient && payload.client.proClientName
+      ? `✅ **Compte Pro :** ${payload.client.proClientName}`
+      : "👤 Client standard";
+
+  return {
+    username: "Express Food — Commandes",
+    avatar_url: "https://cdn-icons-png.flaticon.com/512/3724/3724788.png",
+    embeds: [
+      {
+        title: `🛒 Nouvelle commande #EF-${payload.orderRef}`,
+        color: 0x2d8a2d, // green
+        timestamp: payload.timestamp,
+        fields: [
+          {
+            name: "👤 Client",
+            value: [
+              `**Nom :** ${payload.client.name}`,
+              `**Tél :** ${payload.client.phone}`,
+              payload.client.email ? `**Email :** ${payload.client.email}` : null,
+              proLine,
+            ]
+              .filter(Boolean)
+              .join("\n"),
+            inline: false,
+          },
+          {
+            name: "🛍️ Articles",
+            value: itemLines || "—",
+            inline: false,
+          },
+          {
+            name: "💶 Total",
+            value: `**${payload.orderTotal.toFixed(2)} ${payload.currency}**`,
+            inline: true,
+          },
+          {
+            name: "📄 Bon admin",
+            value: "Fichier joint ci-dessous (sans prix)",
+            inline: true,
+          },
+        ],
+        footer: { text: "Express Food · Système de commandes" },
+      },
+    ],
+  };
+}
+
+// ─── Main dispatcher ──────────────────────────────────────────────────────────
+
+export async function dispatchOrderWebhook(
+  payload: WebhookPayload,
+  webhookUrl: string
+): Promise<{ ok: boolean; status?: number; error?: string }> {
+  try {
+    const pdfBlob        = generateAdminPdfBlob(payload);
+    const discordPayload = buildDiscordPayload(payload);
+
+    // Discord multipart: "payload_json" (embed data) + "files[0]" (PDF attachment)
+    const form = new FormData();
+    form.append("payload_json", JSON.stringify(discordPayload));
+    form.append(
+      "files[0]",
+      pdfBlob,
+      `admin_commande_EF-${payload.orderRef}.pdf`
+    );
+
+    const res = await fetch(webhookUrl, { method: "POST", body: form });
+
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      console.error("[Discord Webhook] error response:", res.status, text);
+    }
+
+    return { ok: res.ok, status: res.status };
+  } catch (err: any) {
+    console.error("[Discord Webhook] dispatch failed:", err);
+    return { ok: false, error: err?.message ?? "Unknown error" };
+  }
+}
+</file>
+
+<file path="tailwind.config.js">
+/** @type {import('tailwindcss').Config} */
+export default {
+  content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
+  theme: {
+    extend: {
+      colors: {
+        primary:   '#0066b2',
+        secondary: '#ff7f00',
+        'gray-bg': '#f6f6f6',
+        'border-color': '#e5e5e5',
+      },
+      borderRadius: {
+        sm: '3px',
+      },
+      fontFamily: {
+        sans: ['system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', 'sans-serif'],
+      },
+    },
+  },
+  plugins: [],
+};
+</file>
+
+<file path="tsconfig.node.json">
+{
+  "compilerOptions": {
+    "composite": true,
+    "skipLibCheck": true,
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "allowSyntheticDefaultImports": true
+  },
+  "include": ["vite.config.ts"]
+}
+</file>
+
+<file path="vite.config.ts">
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+
+export default defineConfig({
+  plugins: [react()],
+})
+</file>
+
+<file path=".gitignore">
+node_modules/
+dist/
+.env
+.env.local
+*.local
+.DS_Store
+
+.vercel
+</file>
+
+<file path="package.json">
+{
+  "name": "express-food-portal",
+  "private": true,
+  "version": "2.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "jspdf": "^2.5.1",
+    "jspdf-autotable": "^3.8.2",
+    "lucide-react": "^0.383.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^25.7.0",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "@vercel/node": "^5.8.1",
+    "@vitejs/plugin-react": "^4.3.1",
+    "autoprefixer": "^10.4.19",
+    "postcss": "^8.4.40",
+    "tailwindcss": "^3.4.7",
+    "typescript": "^5.5.3",
+    "vite": "^5.3.4"
+  }
+}
+</file>
+
+<file path="src/components/Footer.tsx">
+import { useApp } from '../context/AppContext';
+import { COLOR } from '../data/constants';
+import Logo from './Logo';
+
+const COLS = [
+  { title:'Express Food',     links:['Comment ça marche ?','Nos engagements','Avis clients','Blog & Recettes'] },
+  { title:'Mon Compte',       links:['Se connecter','Créer un compte','Mes commandes','Mes avantages'] },
+  { title:'Aide & Contact',   links:['FAQ','Service client','Livraison & retours','Réclamations'] },
+  { title:'Informations',     links:['Mentions légales','CGU & CGV','Confidentialité','Cookies'] },
+];
+
+export default function Footer() {
+  const { navigate, setProLoginOpen } = useApp();
+
+  return (
+    <footer style={{ background: COLOR.dark }}>
+      {/* Red / green divider */}
+      <div className="flex h-1">
+        <div className="flex-1" style={{ background: COLOR.red }} />
+        <div className="flex-1" style={{ background: COLOR.green }} />
+      </div>
+
+      <div className="max-w-7xl mx-auto px-4 py-10">
+
+        {/* Top: logo + tagline */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8 pb-6"
+          style={{ borderBottom:'1px solid rgba(255,255,255,.08)' }}>
+          <Logo size={42} />
+          <div className="text-right hidden sm:block">
+            <p className="text-xs font-semibold" style={{ color: '#9ca3af' }}>
+              Livraison Express partout en France
+            </p>
+          </div>
+        </div>
+
+        {/* Link columns */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
+          {COLS.map(col => (
+            <div key={col.title}>
+              <h4 className="font-black text-sm mb-3 uppercase tracking-wider"
+                style={{ color: col.title === 'Express Food' ? COLOR.red : COLOR.green }}>
+                {col.title}
+              </h4>
+              {col.links.map(l => (
+                <button key={l} className="block text-sm mb-2 text-left w-full hover:text-white"
+                  style={{ color:'#6b7280' }}>
+                  {l}
+                </button>
+              ))}
+            </div>
+          ))}
+        </div>
+
+        {/* Pro access CTA */}
+        <div className="rounded-sm p-4 mb-6 flex flex-col sm:flex-row items-center justify-between gap-3"
+          style={{ background:'rgba(255,255,255,.04)', border:'1px solid rgba(255,255,255,.08)' }}>
+          <div>
+            <p className="font-black text-white text-sm">Vous êtes un professionnel ?</p>
+            <p className="text-xs mt-0.5" style={{ color:'#6b7280' }}>
+              Accédez à vos tarifs exclusifs B2B et passez vos commandes.
+            </p>
+          </div>
+          <div className="flex gap-2 flex-shrink-0">
+            <button onClick={() => setProLoginOpen(true)}
+              className="text-white font-black px-5 py-2 rounded-sm text-sm"
+              style={{ background: COLOR.red }}>
+              Accès Pro →
+            </button>
+          </div>
+        </div>
+
+        {/* Bottom bar */}
+        <div className="flex flex-col md:flex-row items-center justify-between gap-3 pt-4"
+          style={{ borderTop:'1px solid rgba(255,255,255,.06)' }}>
+          <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('home')}>
+            <span className="font-black text-white">EXPRESS</span>
+            <span className="font-black" style={{ color: COLOR.green }}>FOOD</span>
+            <span className="text-xs" style={{ color:'#4b5563' }}>
+              © {new Date().getFullYear()} — Livraison Express
+            </span>
+          </div>
+          <div className="flex gap-5 text-xs flex-wrap justify-center" style={{ color:'#4b5563' }}>
+            <span>🔒 SSL Sécurisé</span>
+            <span>🚗 Livraison Express</span>
+            <span>🌿 Fraîcheur garantie</span>
+            <span>↩️ Retours 30 j</span>
+          </div>
+        </div>
+      </div>
+    </footer>
+  );
+}
+</file>
+
+<file path="src/components/Logo.tsx">
+/**
+ * Express Food SVG logo — redrawn to match brand image exactly.
+ * Red circle arc + speed lines, green diamond arrow, green car + fork inside.
+ */
+interface Props {
+  size?: number;
+  variant?: 'full' | 'mark';
+  className?: string;
+}
+
+export default function Logo({ size = 40, variant = 'full', className = '' }: Props) {
+  const iconH = size;
+  const iconW = size * 1.1;
+
+  return (
+    <div className={`flex items-center gap-2 ${className}`} aria-label="Express Food">
+      <LogoMark width={iconW} height={iconH} />
+      {variant === 'full' && (
+        <div
+          className="leading-none select-none"
+          style={{ fontWeight: 900, letterSpacing: '-0.01em' }}
+        >
+          <span style={{ fontSize: size * 0.46, color: '#E31E24' }}>EXPRESS </span>
+          <span style={{ fontSize: size * 0.46, color: '#2D8A2D' }}>FOOD</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Standalone icon mark — use this anywhere you need just the emblem */
+export function LogoMark({ width, height }: { width: number; height: number }) {
+  return (
+    <svg
+      width={width}
+      height={height}
+      viewBox="0 0 200 170"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden="true"
+    >
+      {/* ── Red speed / swoosh lines (left side) ── */}
+      <line x1="2"  y1="72"  x2="52"  y2="72"  stroke="#E31E24" strokeWidth="9"  strokeLinecap="round"/>
+      <line x1="10" y1="90"  x2="46"  y2="90"  stroke="#E31E24" strokeWidth="7"  strokeLinecap="round"/>
+      <line x1="18" y1="106" x2="44"  y2="106" stroke="#E31E24" strokeWidth="5"  strokeLinecap="round"/>
+
+      {/* ── Red open circle arc (the ring around the emblem) ── */}
+      {/* Top arc */}
+      <path
+        d="M 54 85 A 52 52 0 1 1 54 87"
+        stroke="#E31E24"
+        strokeWidth="9"
+        strokeLinecap="round"
+        fill="none"
+        /* Cut the left side open where the speed lines are */
+        strokeDasharray="240 999"
+        strokeDashoffset="-30"
+      />
+
+      {/* ── Green diamond / arrow (points right) ── */}
+      <polygon
+        points="100,38  162,85  100,132  70,85"
+        fill="#2D8A2D"
+      />
+
+      {/* ── Green car body ── */}
+      {/* Main cabin */}
+      <rect x="76" y="72" width="72" height="30" rx="7" fill="#2D8A2D"/>
+      {/* Roof / windshield area */}
+      <rect x="88" y="58" width="42" height="22" rx="6" fill="#2D8A2D"/>
+      {/* Windshield glass highlight */}
+      <rect x="91" y="61" width="36" height="16" rx="4" fill="#1a3d1a" opacity="0.55"/>
+      {/* Front bumper */}
+      <rect x="140" y="80" width="10" height="14" rx="3" fill="#2D8A2D"/>
+      {/* Rear bumper */}
+      <rect x="68"  y="80" width="10" height="14" rx="3" fill="#2D8A2D"/>
+
+      {/* ── Wheels ── */}
+      <circle cx="90"  cy="104" r="11" fill="#111" stroke="#111" strokeWidth="2"/>
+      <circle cx="90"  cy="104" r="5"  fill="#2D8A2D"/>
+      <circle cx="130" cy="104" r="11" fill="#111" stroke="#111" strokeWidth="2"/>
+      <circle cx="130" cy="104" r="5"  fill="#2D8A2D"/>
+
+      {/* ── Fork overlaid on the car (white) ── */}
+      {/* Handle */}
+      <line x1="108" y1="52" x2="108" y2="86" stroke="white" strokeWidth="3" strokeLinecap="round"/>
+      {/* Tines */}
+      <line x1="103" y1="52" x2="103" y2="63" stroke="white" strokeWidth="2.5" strokeLinecap="round"/>
+      <line x1="108" y1="52" x2="108" y2="63" stroke="white" strokeWidth="2.5" strokeLinecap="round"/>
+      <line x1="113" y1="52" x2="113" y2="63" stroke="white" strokeWidth="2.5" strokeLinecap="round"/>
+      {/* Tine connector curve */}
+      <path d="M103 63 Q108 70 113 63" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round"/>
+    </svg>
+  );
+}
+
+/** Dark-background variant — header/footer (default usage) */
+export function LogoDark({ size = 40, className = '' }: Omit<Props, 'variant'>) {
+  return <Logo size={size} variant="full" className={className} />;
+}
+
+/** Light-background variant — same emblem, wordmark colors stay */
+export function LogoLight({ size = 40, className = '' }: Omit<Props, 'variant'>) {
+  return <Logo size={size} variant="full" className={className} />;
+}
+</file>
+
+<file path="src/utils/pdfGenerator.ts">
+// src/utils/pdfGenerator.ts
+// Client-facing branded PDF — items with prices, order total, Express Food branding.
+// This file is UNCHANGED in content; it only adds a typed options interface
+// so CheckoutModal.tsx can call it cleanly.
+
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+
+export interface PdfOptions {
+  orderRef: string;
+  clientName: string;
+  clientPhone: string;
+  clientEmail?: string;
+  isProClient: boolean;
+  proClientName?: string;
+  items: Array<{
+    name: string;
+    quantity: number;
+    unitPrice: number;
+    totalPrice: number;
+  }>;
+  orderTotal: number;
+}
+
+export function generatePDF(opts: PdfOptions): void {
+  const doc = new jsPDF({ unit: "mm", format: "a4" });
+  const red   = "#E31E24";
+  const green  = "#2D8A2D";
+  const dark   = "#111111";
+  const w      = doc.internal.pageSize.getWidth();
+
+  // ── Header stripes ─────────────────────────────────────────────────────────
+  doc.setFillColor(red);
+  doc.rect(0, 0, w, 22, "F");
+  doc.setFillColor(green);
+  doc.rect(0, 22, w, 5, "F");
+
+  doc.setTextColor("#FFFFFF");
+  doc.setFontSize(20);
+  doc.setFont("helvetica", "bold");
+  doc.text("Express Food", w / 2, 14, { align: "center" });
+
+  // ── Order ref box ──────────────────────────────────────────────────────────
+  doc.setFillColor("#F5F5F5");
+  doc.roundedRect(14, 32, w - 28, 20, 3, 3, "F");
+  doc.setTextColor(dark);
+  doc.setFontSize(12);
+  doc.setFont("helvetica", "bold");
+  doc.text(`Commande #EF-${opts.orderRef}`, 20, 41);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
+  doc.setTextColor("#555555");
+  doc.text(`Émis le : ${new Date().toLocaleString("fr-FR")}`, 20, 48);
+
+  // ── Client details ─────────────────────────────────────────────────────────
+  doc.setFontSize(10);
+  doc.setTextColor(dark);
+  doc.setFont("helvetica", "bold");
+  doc.text("Informations client", 14, 62);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
+  doc.setTextColor("#333333");
+  doc.text(`Nom : ${opts.clientName}`, 14, 69);
+  doc.text(`Téléphone : ${opts.clientPhone}`, 14, 75);
+  if (opts.clientEmail) doc.text(`Email : ${opts.clientEmail}`, 14, 81);
+
+  if (opts.isProClient && opts.proClientName) {
+    const badgeY = opts.clientEmail ? 90 : 84;
+    doc.setFillColor(green);
+    doc.roundedRect(14, badgeY - 5, 55, 8, 2, 2, "F");
+    doc.setTextColor("#FFFFFF");
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8);
+    doc.text(`✓ Compte Pro : ${opts.proClientName}`, 17, badgeY);
+  }
+
+  // ── Items table (with prices) ──────────────────────────────────────────────
+  const tableStartY = (opts.isProClient && opts.proClientName)
+    ? (opts.clientEmail ? 102 : 96)
+    : (opts.clientEmail ? 90 : 84);
+
+  doc.setTextColor(dark);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
+  doc.text("Détail de la commande", 14, tableStartY);
+
+  autoTable(doc, {
+    startY: tableStartY + 4,
+    head: [["Article", "Qté", "Prix unit.", "Total"]],
+    body: opts.items.map((item) => [
+      item.name,
+      item.quantity.toString(),
+      `${item.unitPrice.toFixed(2)} €`,
+      `${item.totalPrice.toFixed(2)} €`,
+    ]),
+    headStyles: {
+      fillColor: red,
+      textColor: "#FFFFFF",
+      fontStyle: "bold",
+      fontSize: 9,
+    },
+    bodyStyles: { fontSize: 9, textColor: dark },
+    alternateRowStyles: { fillColor: "#FAFAFA" },
+    columnStyles: {
+      0: { cellWidth: "auto" },
+      1: { cellWidth: 20, halign: "center" },
+      2: { cellWidth: 30, halign: "right" },
+      3: { cellWidth: 30, halign: "right" },
+    },
+    foot: [[
+      { content: "TOTAL", colSpan: 3, styles: { halign: "right", fontStyle: "bold", fillColor: red, textColor: "#FFFFFF" } },
+      { content: `${opts.orderTotal.toFixed(2)} €`, styles: { halign: "right", fontStyle: "bold", fillColor: red, textColor: "#FFFFFF" } },
+    ]],
+    margin: { left: 14, right: 14 },
+  });
+
+  // ── Footer ─────────────────────────────────────────────────────────────────
+  const finalY = (doc as any).lastAutoTable.finalY + 10;
+  doc.setDrawColor(green);
+  doc.setLineWidth(0.5);
+  doc.line(14, finalY, w - 14, finalY);
+  doc.setFontSize(8);
+  doc.setTextColor("#888888");
+  doc.setFont("helvetica", "normal");
+  doc.text("Merci pour votre commande — Express Food · contact@expressfood.ma", w / 2, finalY + 6, { align: "center" });
+
+  // ── Save ───────────────────────────────────────────────────────────────────
+  doc.save(`commande_EF-${opts.orderRef}.pdf`);
+}
+</file>
+
+<file path="tsconfig.json">
+{
+  "compilerOptions": {
+    "types": ["node"],
+    "target": "ES2020",
+    "useDefineForClassFields": true,
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "skipLibCheck": true,
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "strict": false,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "noFallthroughCasesInSwitch": true
+  },
+  "include": ["src", "api"],
+  "references": [{ "path": "./tsconfig.node.json" }]
+}
+</file>
+
+<file path="vercel.json">
+{
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/$1" },
+    { "source": "/(.*)",     "destination": "/index.html" }
+  ]
+}
+</file>
+
+<file path="src/data/constants.ts">
+// ── Brand ─────────────────────────────────────────────────────────────────────
+export const BRAND_NAME    = 'Express Food';
+export const BRAND_TAGLINE = 'Livraison Express à domicile';
+
+// ── Admin ─────────────────────────────────────────────────────────────────────
+export const ADMIN_ROUTE     = '281938821';
+export const ADMIN_PASSWORD  = 'ENSA_Grocery2024!';
+
+// ── Shopify ───────────────────────────────────────────────────────────────────
+export const SHOPIFY_STORE   = 'your-store-name';
+
+// ── Palette ───────────────────────────────────────────────────────────────────
+export const COLOR = {
+  red:    '#E31E24',   // primary   (was blue)
+  green:  '#2D8A2D',   // secondary (was orange)
+  dark:   '#111111',   // header / footer background
+  navBg:  '#1a1a1a',   // category nav bar
+  darkBg: '#0d0d0d',   // deepest dark (announcement strip)
+  grayBg: '#f6f6f6',   // page background
+  border: '#e5e5e5',   // card / input borders
+  redDark:'#b91519',   // hover / accent red
+} as const;
+
+// ── LocalStorage / SessionStorage keys ───────────────────────────────────────
+export const LS_PRODUCTS    = 'ef_products';
+export const LS_CART        = 'ef_cart';
+export const LS_PRO_CLIENTS = 'ef_pro_clients';
+export const SS_ADMIN       = 'ef_admin';
+export const SS_PRO_CLIENT  = 'ef_pro_session';
+
+// ── Categories ────────────────────────────────────────────────────────────────
+export const ALL_CATEGORIES = [
+  'All','Fruits','Vegetables','Dairy','Bakery',
+  'Meat','Beverages','Frozen','Pantry','Snacks',
+] as const;
+
+export const PRODUCT_CATEGORIES = ALL_CATEGORIES.filter((c) => c !== 'All');
+
+export const CAT_ICON: Record<string, string> = {
+  Fruits:'🍎', Vegetables:'🥦', Dairy:'🥛', Bakery:'🥖',
+  Meat:'🥩',  Beverages:'🥤', Frozen:'🧊', Pantry:'🫙', Snacks:'🍿',
+};
+
+// ── Price-range presets ───────────────────────────────────────────────────────
+export const PRICE_RANGES: { label: string; val: [number, number] }[] = [
+  { label:'Tous les prix', val:[0,1000] },
+  { label:'Moins de 2 €', val:[0,2]    },
+  { label:'2 € – 5 €',    val:[2,5]    },
+  { label:'5 – 10 €',     val:[5,10]   },
+  { label:'Plus de 10 €', val:[10,1000]},
+];
+
+// ── Delivery zones ────────────────────────────────────────────────────────────
+export const DRIVE_STORES = [
+  'Paris – 75001','Paris – 75008','Lyon – Centre',
+  'Marseille – Centre','Bordeaux','Toulouse',
+];
+</file>
+
+<file path="src/components/CheckoutModal.tsx">
+// src/components/CheckoutModal.tsx
+
+import { useState } from "react";
+import {
+  X, ShoppingBag, User, Phone, Mail,
+  CheckCircle, Loader2, AlertCircle,
+} from "lucide-react";
+import { useApp } from "../context/AppContext";
+import { generatePDF } from "../utils/pdfGenerator";
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function generateOrderRef(): string {
+  return String(Math.floor(10000 + Math.random() * 89999));
+}
+
+type SubmitState = "idle" | "loading" | "success" | "error";
+
+// ─── Component ────────────────────────────────────────────────────────────────
+
+export default function CheckoutModal() {
+  const {
+    cart,
+    checkoutOpen,
+    setCheckoutOpen,
+    clearCart,
+    activeProClient,
+  } = useApp();
+
+  const [name,         setName]         = useState("");
+  const [phone,        setPhone]        = useState("");
+  const [email,        setEmail]        = useState("");
+  const [submitState,  setSubmitState]  = useState<SubmitState>("idle");
+  const [webhookError, setWebhookError] = useState<string | null>(null);
+
+  if (!checkoutOpen) return null;
+
+  const orderTotal = cart.reduce(
+    (sum, item) => sum + item.effectivePrice * item.quantity,
+    0
+  );
+
+  // ── Submit ─────────────────────────────────────────────────────────────────
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!name.trim() || !phone.trim()) return;
+
+    setSubmitState("loading");
+    setWebhookError(null);
+
+    const orderRef = generateOrderRef();
+
+    // 1. Build Discord embed
+    const itemsText = cart
+      .map((item) =>
+        `> **${item.name}** — ×${item.quantity} — ${(item.effectivePrice * item.quantity).toFixed(2)} €`
+      )
+      .join("\n");
+
+    const discordBody = {
+      embeds: [
+        {
+          title: `🛒 Nouvelle Commande — #${orderRef}`,
+          color: 0xe31e24,
+          fields: [
+            { name: "👤 Client",    value: name.trim(),        inline: true },
+            { name: "📞 Téléphone", value: phone.trim(),       inline: true },
+            { name: "📧 Email",     value: email.trim() || "—", inline: true },
+            {
+              name:  activeProClient ? "⭐ Compte Pro" : "👤 Type client",
+              value: activeProClient ? activeProClient.name : "Client Standard",
+              inline: true,
+            },
+            { name: "🧾 Articles commandés", value: itemsText,                        inline: false },
+            { name: "💰 Total",              value: `**${orderTotal.toFixed(2)} €**`, inline: false },
+          ],
+          footer: {
+            text: `Express Food • ${new Date().toLocaleDateString("fr-FR", {
+              day: "2-digit", month: "long", year: "numeric",
+            })}`,
+          },
+        },
+      ],
+    };
+
+    // 2. POST to Vercel API route FIRST — before any file download
+    try {
+      const res = await fetch("/api/notify", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify(discordBody),
+      });
+
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}`);
+      }
+
+      // 3. Discord succeeded — NOW trigger the PDF download
+      //    (iOS Safari won't interrupt a completed fetch)
+      generatePDF({
+        orderRef,
+        clientName:    name.trim(),
+        clientPhone:   phone.trim(),
+        clientEmail:   email.trim() || undefined,
+        isProClient:   !!activeProClient,
+        proClientName: activeProClient?.name,
+        items: cart.map((item) => ({
+          name:       item.name,
+          quantity:   item.quantity,
+          unitPrice:  item.effectivePrice,
+          totalPrice: item.effectivePrice * item.quantity,
+        })),
+        orderTotal,
+      });
+
+      setSubmitState("success");
+      clearCart();
+
+    } catch (err: any) {
+      console.error("[Discord] notification failed:", err);
+
+      // 4. Even if Discord fails, still give the client their PDF
+      generatePDF({
+        orderRef,
+        clientName:    name.trim(),
+        clientPhone:   phone.trim(),
+        clientEmail:   email.trim() || undefined,
+        isProClient:   !!activeProClient,
+        proClientName: activeProClient?.name,
+        items: cart.map((item) => ({
+          name:       item.name,
+          quantity:   item.quantity,
+          unitPrice:  item.effectivePrice,
+          totalPrice: item.effectivePrice * item.quantity,
+        })),
+        orderTotal,
+      });
+
+      setWebhookError(
+        `Notification Discord échouée (${err?.message ?? "erreur réseau"}). La commande a bien été traitée côté client.`
+      );
+      setSubmitState("error");
+      clearCart();
+    }
+  }
+
+  function handleClose() {
+    setCheckoutOpen(false);
+    setSubmitState("idle");
+    setName("");
+    setPhone("");
+    setEmail("");
+    setWebhookError(null);
+  }
+
+  // ── Success / error screen ─────────────────────────────────────────────────
+  if (submitState === "success" || submitState === "error") {
+    return (
+      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 text-center">
+          <div
+            className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4"
+            style={{
+              backgroundColor:
+                submitState === "success" ? "#2D8A2D22" : "#E31E2422",
+            }}
+          >
+            {submitState === "success" ? (
+              <CheckCircle className="w-9 h-9" style={{ color: "#2D8A2D" }} />
+            ) : (
+              <AlertCircle className="w-9 h-9" style={{ color: "#E31E24" }} />
+            )}
+          </div>
+
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+            {submitState === "success" ? "Commande confirmée !" : "Commande reçue"}
+          </h2>
+
+          <p className="text-gray-500 text-sm mb-2">
+            Votre PDF a été téléchargé. Notre équipe traitera votre commande dans les
+            meilleurs délais.
+          </p>
+
+          {submitState === "error" && webhookError && (
+            <p className="text-xs text-orange-600 bg-orange-50 rounded-lg px-3 py-2 mt-2 mb-2">
+              ⚠️ {webhookError}
+            </p>
+          )}
+
+          <button
+            onClick={handleClose}
+            className="mt-6 w-full py-3 rounded-xl font-semibold text-white transition-all"
+            style={{ backgroundColor: "#E31E24" }}
+          >
+            Fermer
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Main modal ─────────────────────────────────────────────────────────────
+  return (
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+
+        {/* Header */}
+        <div className="flex items-center justify-between p-6 border-b border-gray-100">
+          <div className="flex items-center gap-3">
+            <div
+              className="w-9 h-9 rounded-xl flex items-center justify-center"
+              style={{ backgroundColor: "#E31E2415" }}
+            >
+              <ShoppingBag className="w-5 h-5" style={{ color: "#E31E24" }} />
+            </div>
+            <h2 className="text-xl font-bold text-gray-900">
+              Finaliser la commande
+            </h2>
+          </div>
+          <button
+            onClick={handleClose}
+            className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors"
+          >
+            <X className="w-4 h-4 text-gray-500" />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+
+          {/* Order summary */}
+          <div className="rounded-xl overflow-hidden border border-gray-100">
+            <div className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-gray-400 bg-gray-50">
+              Récapitulatif
+            </div>
+            <div className="divide-y divide-gray-50">
+              {cart.map((item) => (
+                <div
+                  key={item.id}
+                  className="flex justify-between items-center px-4 py-3"
+                >
+                  <div>
+                    <span className="text-sm font-medium text-gray-800">
+                      {item.name}
+                    </span>
+                    <span className="ml-2 text-xs text-gray-400">
+                      × {item.quantity}
+                    </span>
+                  </div>
+                  <span className="text-sm font-semibold text-gray-700">
+                    {(item.effectivePrice * item.quantity).toFixed(2)} €
+                  </span>
+                </div>
+              ))}
+            </div>
+            <div
+              className="flex justify-between items-center px-4 py-3 font-bold text-white rounded-b-xl"
+              style={{ backgroundColor: "#E31E24" }}
+            >
+              <span>Total</span>
+              <span>{orderTotal.toFixed(2)} €</span>
+            </div>
+          </div>
+
+          {/* Client form */}
+          <div className="space-y-4">
+            <p className="text-sm font-semibold text-gray-700">Vos coordonnées</p>
+
+            <div className="relative">
+              <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Nom complet *"
+                required
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 text-sm"
+              />
+            </div>
+
+            <div className="relative">
+              <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input
+                type="tel"
+                placeholder="Téléphone *"
+                required
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 text-sm"
+              />
+            </div>
+
+            <div className="relative">
+              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input
+                type="email"
+                placeholder="Email (optionnel)"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 text-sm"
+              />
+            </div>
+          </div>
+
+          {/* Pro badge */}
+          {activeProClient && (
+            <div
+              className="flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-medium"
+              style={{ backgroundColor: "#2D8A2D15", color: "#2D8A2D" }}
+            >
+              <CheckCircle className="w-4 h-4" />
+              Compte Pro actif : {activeProClient.name}
+            </div>
+          )}
+
+          <p className="text-xs text-gray-400 text-center">
+            Votre PDF de commande sera téléchargé automatiquement. Notre équipe
+            recevra une notification instantanée.
+          </p>
+
+          <button
+            type="submit"
+            disabled={submitState === "loading"}
+            className="w-full py-4 rounded-xl font-bold text-white text-sm tracking-wide transition-all flex items-center justify-center gap-2 disabled:opacity-70"
+            style={{ backgroundColor: "#E31E24" }}
+          >
+            {submitState === "loading" ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Traitement en cours…
+              </>
+            ) : (
+              "Confirmer la commande"
+            )}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+</file>
+
+</files>
