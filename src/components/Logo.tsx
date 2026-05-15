@@ -9,8 +9,7 @@ export default function Logo({ size = 40, className = '' }: Props) {
     <img
       src="/logo.png"
       alt="Express Food"
-      height={size}
-      style={{ height: size, width: 'auto', objectFit: 'contain' }}
+      style={{ height: size * 2.2, width: 'auto', objectFit: 'contain' }}
       className={className}
     />
   );
@@ -21,7 +20,7 @@ export function LogoMark({ width, height }: { width: number; height: number }) {
     <img
       src="/logo.png"
       alt="Express Food"
-      style={{ height, width, objectFit: 'contain' }}
+      style={{ height: height * 2.2, width: 'auto', objectFit: 'contain' }}
     />
   );
 }
