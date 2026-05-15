@@ -248,6 +248,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       proLoginOpen, setProLoginOpen,
       checkoutOpen, setCheckoutOpen,
       checkout,
+      globalOrders, addGlobalOrder, updateOrderStatus,
     }}>
       {children}
     </AppContext.Provider>
