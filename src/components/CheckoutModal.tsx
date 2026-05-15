@@ -15,7 +15,7 @@ function generateOrderRef(): string {
 type SubmitState = "idle" | "loading" | "success" | "error";
 
 export default function CheckoutModal() {
-  const { cart, checkoutOpen, setCheckoutOpen, clearCart, activeProClient } = useApp();
+  const { cart, checkoutOpen, setCheckoutOpen, clearCart, activeProClient, addGlobalOrder } = useApp();
 
   const [name,        setName]        = useState("");
   const [phone,       setPhone]       = useState("");
@@ -27,6 +27,7 @@ export default function CheckoutModal() {
 
   const isPro = !!activeProClient;
   const orderTotal = cart.reduce((s, i) => s + i.effectivePrice * i.quantity, 0);
+  
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -83,6 +84,26 @@ export default function CheckoutModal() {
       const res = await fetch("/api/notify-multipart", { method: "POST", body: form });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       setSubmitState("success");
+      addGlobalOrder({
+        orderId:      orderRef,
+        date:         new Date().toISOString(),
+        clientName:   name.trim(),
+        clientPhone:  phone.trim(),
+        clientEmail:  email.trim(),
+        isProClient:  isPro,
+        proClientId:  activeProClient?.id,
+        proClientName: activeProClient?.name,
+        items: cart.map(i => ({
+          productId:  i.id,
+          name:       i.name,
+          unit:       i.unit,
+          quantity:   i.quantity,
+          unitPrice:  i.effectivePrice,
+          total:      i.effectivePrice * i.quantity,
+        })),
+        orderTotal,
+        status: 'confirmed',
+      });
     } catch (err: any) {
       console.error("[Discord] failed:", err);
       setWebhookError(`Notification Discord échouée (${err?.message ?? "erreur réseau"}).`);

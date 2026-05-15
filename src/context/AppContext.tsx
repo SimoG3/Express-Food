@@ -2,7 +2,7 @@ import {
   createContext, useContext, useState, useEffect,
   useCallback, useMemo, type ReactNode,
 } from 'react';
-import type { Product, CartItem, AppContextType, PageKey, ProClient, OrderRecord } from '../types';
+import type { Product, CartItem, AppContextType, PageKey, ProClient, OrderRecord, GlobalOrder } from '../types';
 import { SEED_PRODUCTS, SEED_PRO_CLIENTS } from '../data/products';
 import {
   ADMIN_ROUTE, ADMIN_PASSWORD, SHOPIFY_STORE,
@@ -36,7 +36,12 @@ function gen6DigitCode(existing: string[]): string {
 
 const AppContext = createContext<AppContextType | null>(null);
 
+export const LS_GLOBAL_ORDERS = 'ef_global_orders';
+
 export function AppProvider({ children }: { children: ReactNode }) {
+  const [globalOrders, setGlobalOrders] = useState<GlobalOrder[]>(
+    () => readLS(LS_GLOBAL_ORDERS, [])
+  );
   const [products,  setProducts]  = useState<Product[]>   (() => readLS(LS_PRODUCTS,    SEED_PRODUCTS));
   const [cart,      setCart]      = useState<CartItem[]>   (() => readLS(LS_CART,        []));
   const [proClients,setProClients]= useState<ProClient[]>  (() => readLS(LS_PRO_CLIENTS, SEED_PRO_CLIENTS));
@@ -84,11 +89,21 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return () => window.removeEventListener('hashchange', onHash);
   }, []);
 
+  useEffect(() => writeLS(LS_GLOBAL_ORDERS, globalOrders), [globalOrders]);
+
   // Search
   const submitSearch = useCallback((q: string) => {
     setSearchQuery(q);
     navigate('products');
   }, [navigate]);
+
+  const addGlobalOrder = useCallback((order: GlobalOrder) => {
+    setGlobalOrders(prev => [order, ...prev]);
+  }, []);
+
+  const updateOrderStatus = useCallback((orderId: string, status: GlobalOrder['status']) => {
+    setGlobalOrders(prev => prev.map(o => o.orderId === orderId ? { ...o, status } : o));
+  }, []);
 
   // ── Pricing helpers ─────────────────────────────────────────────────────────
   const priceFor = useCallback((product: Product): number => {

@@ -53,6 +53,9 @@ export interface ProClient {
 
 export interface AppContextType {
   products: Product[];
+  globalOrders:      GlobalOrder[];
+  addGlobalOrder:    (order: GlobalOrder) => void;
+  updateOrderStatus: (orderId: string, status: GlobalOrder['status']) => void;
   addProduct: (p: Omit<Product, 'id'>) => void;
   updateProduct: (p: Product) => void;
   deleteProduct: (id: string) => void;
@@ -108,4 +111,19 @@ export interface PdfOrderData {
   orderId: string; clientName: string; phone: string; email: string;
   date: string; items: OrderLineItem[]; subtotal: number;
   isProClient: boolean; proClientName?: string;
+}
+
+// ── Global Orders (admin history) ────────────────────────────────────────────
+export interface GlobalOrder {
+  orderId:        string;
+  date:           string;
+  clientName:     string;
+  clientPhone:    string;
+  clientEmail:    string;
+  isProClient:    boolean;
+  proClientId?:   string;
+  proClientName?: string;
+  items:          OrderLineItem[];
+  orderTotal:     number;
+  status:         'pending' | 'confirmed' | 'cancelled';
 }
