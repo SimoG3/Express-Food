@@ -39,6 +39,14 @@ const AppContext = createContext<AppContextType | null>(null);
 export const LS_GLOBAL_ORDERS = 'ef_global_orders';
 
 export function AppProvider({ children }: { children: ReactNode }) {
+
+  // ── Cache busting — bump version whenever SEED_PRODUCTS changes ──────────
+  const CACHE_VERSION = 'v2';
+  if (localStorage.getItem('ef_version') !== CACHE_VERSION) {
+    localStorage.removeItem('ef_products');
+    localStorage.setItem('ef_version', CACHE_VERSION);
+  }
+
   const [globalOrders, setGlobalOrders] = useState<GlobalOrder[]>(
     () => readLS(LS_GLOBAL_ORDERS, [])
   );
