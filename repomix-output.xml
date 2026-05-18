@@ -41,12 +41,15 @@ The content is organized as follows:
 
 <directory_structure>
 .gitignore
+~/.ssh/config
 api/notify-multipart.ts
 api/notify.ts
+api/send-email.ts
 index.html
 package.json
 postcss.config.js
 public/favicon.svg
+public/logo.png
 README.md
 src/App.tsx
 src/components/CartSidebar.tsx
@@ -83,51 +86,154 @@ vite.config.ts
 <files>
 This section contains the contents of the repository's files.
 
-<file path="api/notify-multipart.ts">
-// api/notify-multipart.ts
-// Accepts a multipart/form-data request from the client (payload_json + PDF files)
-// and forwards it directly to the Discord webhook — preserving the multipart boundary.
+<file path="api/send-email.ts">
+import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { Resend } from 'resend';
 
+const resend = new Resend(process.env.RESEND_API_KEY);
+
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  if (req.method !== 'POST') return res.status(405).end();
+
+  const {
+    isPro,
+    clientName,
+    clientEmail,
+    proClientName,
+    proClientEmail,
+    orderRef,
+    items,
+    orderTotal,
+  } = req.body;
+
+  const adminEmail = isPro
+    ? process.env.ADMIN_PRO_EMAIL!
+    : process.env.ADMIN_NORMAL_EMAIL!;
+
+  const itemsHtml = items.map((i: any) =>
+    `<tr>
+      <td style="padding:6px 12px;border-bottom:1px solid #f0f0f0">${i.name}</td>
+      <td style="padding:6px 12px;border-bottom:1px solid #f0f0f0;text-align:center">${i.quantity}</td>
+      ${!isPro ? `<td style="padding:6px 12px;border-bottom:1px solid #f0f0f0;text-align:right">${i.unitPrice.toFixed(2)} €</td>
+      <td style="padding:6px 12px;border-bottom:1px solid #f0f0f0;text-align:right">${i.total.toFixed(2)} €</td>` : ''}
+    </tr>`
+  ).join('');
+
+  const tableHeaders = isPro
+    ? `<th style="text-align:left;padding:8px 12px;background:#111;color:white">Article</th>
+       <th style="text-align:center;padding:8px 12px;background:#111;color:white">Qté</th>`
+    : `<th style="text-align:left;padding:8px 12px;background:#111;color:white">Article</th>
+       <th style="text-align:center;padding:8px 12px;background:#111;color:white">Qté</th>
+       <th style="text-align:right;padding:8px 12px;background:#111;color:white">Prix unit.</th>
+       <th style="text-align:right;padding:8px 12px;background:#111;color:white">Total</th>`;
+
+  const emailHtml = (recipientName: string, showTotal: boolean) => `
+    <div style="font-family:sans-serif;max-width:600px;margin:0 auto">
+      <div style="background:#111;padding:24px;text-align:center">
+        <span style="color:#E31E24;font-weight:900;font-size:22px">EXPRESS </span>
+        <span style="color:#2D8A2D;font-weight:900;font-size:22px">FOOD</span>
+      </div>
+      <div style="background:#E31E24;height:4px"></div>
+      <div style="padding:24px;background:#fff">
+        <h2 style="color:#111;margin-top:0">Nouvelle commande #EF-${orderRef}</h2>
+        <p style="color:#555">Bonjour ${recipientName},</p>
+        <p style="color:#555">
+          ${isPro
+            ? `Une nouvelle commande a été passée par le compte Pro <strong>${proClientName}</strong>.`
+            : `Une nouvelle commande a été reçue de <strong>${clientName}</strong>.`}
+        </p>
+        ${!isPro ? `<p style="color:#555"><strong>Client :</strong> ${clientName}<br/><strong>Email :</strong> ${clientEmail}</p>` : ''}
+        <table style="width:100%;border-collapse:collapse;margin:16px 0">
+          <thead><tr>${tableHeaders}</tr></thead>
+          <tbody>${itemsHtml}</tbody>
+          ${showTotal && !isPro ? `
+          <tfoot>
+            <tr>
+              <td colspan="${isPro ? 1 : 3}" style="padding:10px 12px;text-align:right;font-weight:900;background:#E31E24;color:white">TOTAL TTC</td>
+              <td style="padding:10px 12px;text-align:right;font-weight:900;background:#E31E24;color:white">${orderTotal.toFixed(2)} €</td>
+            </tr>
+          </tfoot>` : ''}
+        </table>
+      </div>
+      <div style="background:#f6f6f6;padding:16px;text-align:center;color:#999;font-size:12px">
+        Express Food · contact@expressfood.ma
+      </div>
+    </div>
+  `;
+
+  try {
+    const sends = [];
+
+    // ── Email to admin ─────────────────────────────────────────────────────
+    sends.push(resend.emails.send({
+      from: 'Express Food <orders@yourdomain.com>',
+      to: adminEmail,
+      subject: `🛒 Nouvelle commande #EF-${orderRef} — ${isPro ? proClientName : clientName}`,
+      html: emailHtml('Admin', true),
+    }));
+
+    // ── Email to client ────────────────────────────────────────────────────
+    const clientEmailAddress = isPro ? proClientEmail : clientEmail;
+    if (clientEmailAddress) {
+      sends.push(resend.emails.send({
+        from: 'Express Food <orders@yourdomain.com>',
+        to: clientEmailAddress,
+        subject: `✅ Votre commande Express Food #EF-${orderRef} est confirmée`,
+        html: emailHtml(isPro ? proClientName : clientName, !isPro),
+      }));
+    }
+
+    await Promise.all(sends);
+    return res.status(200).json({ ok: true });
+  } catch (err: any) {
+    console.error('[Resend] error:', err);
+    return res.status(500).json({ error: 'Email error', detail: err?.message });
+  }
+}
+</file>
+
+<file path="~/.ssh/config">
+Host github.com
+  Hostname ssh.github.com
+  Port 443
+  User git
+</file>
+
+<file path="api/notify-multipart.ts">
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
-const DISCORD_WEBHOOK_URL = process.env.DISCORD_WEBHOOK_URL!;
-
-export const config = {
-  api: {
-    // Disable Next.js / Vercel body parsing so we can pipe the raw stream
-    bodyParser: false,
-  },
-};
+export const config = { api: { bodyParser: false } };
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') return res.status(405).end();
 
   try {
-    // Collect the raw body chunks
     const chunks: Buffer[] = [];
     for await (const chunk of req as any) {
       chunks.push(typeof chunk === 'string' ? Buffer.from(chunk) : chunk);
     }
     const body = Buffer.concat(chunks);
-
-    // Forward to Discord with the same Content-Type (multipart/form-data + boundary)
     const contentType = (req.headers['content-type'] as string) ?? 'multipart/form-data';
 
-    const response = await fetch(DISCORD_WEBHOOK_URL, {
-      method:  'POST',
+    // ── Pick webhook based on client type ──────────────────────────────────
+    const isPro = req.headers['x-is-pro'] === 'true';
+    const webhookUrl = isPro
+      ? process.env.DISCORD_WEBHOOK_PRO!
+      : process.env.DISCORD_WEBHOOK_URL!;
+
+    const response = await fetch(webhookUrl, {
+      method: 'POST',
       headers: { 'Content-Type': contentType },
       body,
     });
 
     if (!response.ok) {
       const text = await response.text().catch(() => '');
-      console.error('[Discord Webhook] error:', response.status, text);
       return res.status(response.status).json({ error: 'Discord error', detail: text });
     }
 
     return res.status(200).json({ ok: true });
   } catch (err: any) {
-    console.error('[Discord Webhook] internal error:', err);
     return res.status(500).json({ error: 'Internal error', detail: err?.message });
   }
 }
@@ -1109,271 +1215,6 @@ export default function TrustBanner() {
       </div>
     </section>
   );
-}
-</file>
-
-<file path="src/context/AppContext.tsx">
-import {
-  createContext, useContext, useState, useEffect,
-  useCallback, useMemo, type ReactNode,
-} from 'react';
-import type { Product, CartItem, AppContextType, PageKey, ProClient, OrderRecord, GlobalOrder } from '../types';
-import { SEED_PRODUCTS, SEED_PRO_CLIENTS } from '../data/products';
-import {
-  ADMIN_ROUTE, ADMIN_PASSWORD, SHOPIFY_STORE,
-  LS_PRODUCTS, LS_CART, LS_PRO_CLIENTS,
-  SS_ADMIN, SS_PRO_CLIENT,
-} from '../data/constants';
-
-// ── Storage helpers ───────────────────────────────────────────────────────────
-function readLS<T>(key: string, fallback: T): T {
-  try { const r = localStorage.getItem(key); return r ? JSON.parse(r) : fallback; }
-  catch { return fallback; }
-}
-function writeLS(key: string, val: unknown) {
-  try { localStorage.setItem(key, JSON.stringify(val)); } catch {}
-}
-
-function initialPage(): PageKey {
-  const h = window.location.hash.replace(/^#\/?/, '');
-  if (h === ADMIN_ROUTE) return 'admin';
-  if (h === 'products')  return 'products';
-  return 'home';
-}
-
-// ── 6-digit code generator ────────────────────────────────────────────────────
-function gen6DigitCode(existing: string[]): string {
-  let code: string;
-  do { code = String(Math.floor(100000 + Math.random() * 900000)); }
-  while (existing.includes(code));
-  return code;
-}
-
-const AppContext = createContext<AppContextType | null>(null);
-
-export const LS_GLOBAL_ORDERS = 'ef_global_orders';
-
-export function AppProvider({ children }: { children: ReactNode }) {
-  const [globalOrders, setGlobalOrders] = useState<GlobalOrder[]>(
-    () => readLS(LS_GLOBAL_ORDERS, [])
-  );
-  const [products,  setProducts]  = useState<Product[]>   (() => readLS(LS_PRODUCTS,    SEED_PRODUCTS));
-  const [cart,      setCart]      = useState<CartItem[]>   (() => readLS(LS_CART,        []));
-  const [proClients,setProClients]= useState<ProClient[]>  (() => readLS(LS_PRO_CLIENTS, SEED_PRO_CLIENTS));
-  const [cartOpen,  setCartOpen]  = useState(false);
-  const [adminAuth, setAdminAuth] = useState(() => sessionStorage.getItem(SS_ADMIN) === 'yes');
-  const [page,      setPage]      = useState<PageKey>(initialPage);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [proLoginOpen,  setProLoginOpen]  = useState(false);
-  const [checkoutOpen,  setCheckoutOpen]  = useState(false);
-  const [activeProClient, setActiveProClient] = useState<ProClient | null>(() => {
-    try {
-      const s = sessionStorage.getItem(SS_PRO_CLIENT);
-      if (!s) return null;
-      const saved = JSON.parse(s) as ProClient;
-      // Refresh from proClients state in case overrides changed
-      return saved;
-    } catch { return null; }
-  });
-
-  useEffect(() => writeLS(LS_PRODUCTS,    products),   [products]);
-  useEffect(() => writeLS(LS_CART,        cart),       [cart]);
-  useEffect(() => writeLS(LS_PRO_CLIENTS, proClients), [proClients]);
-
-  // Sync active pro client when proClients list changes
-  useEffect(() => {
-    if (activeProClient) {
-      const refreshed = proClients.find(c => c.id === activeProClient.id);
-      if (refreshed) {
-        setActiveProClient(refreshed);
-        sessionStorage.setItem(SS_PRO_CLIENT, JSON.stringify(refreshed));
-      }
-    }
-  }, [proClients]); // eslint-disable-line
-
-  // Hash router
-  const navigate = useCallback((p: PageKey) => {
-    setPage(p);
-    window.location.hash = p === 'home' ? '' : p;
-    window.scrollTo({ top: 0 });
-  }, []);
-
-  useEffect(() => {
-    const onHash = () => setPage(initialPage());
-    window.addEventListener('hashchange', onHash);
-    return () => window.removeEventListener('hashchange', onHash);
-  }, []);
-
-  useEffect(() => writeLS(LS_GLOBAL_ORDERS, globalOrders), [globalOrders]);
-
-  // Search
-  const submitSearch = useCallback((q: string) => {
-    setSearchQuery(q);
-    navigate('products');
-  }, [navigate]);
-
-  const addGlobalOrder = useCallback((order: GlobalOrder) => {
-    setGlobalOrders(prev => [order, ...prev]);
-  }, []);
-
-  const updateOrderStatus = useCallback((orderId: string, status: GlobalOrder['status']) => {
-    setGlobalOrders(prev => prev.map(o => o.orderId === orderId ? { ...o, status } : o));
-  }, []);
-
-  // ── Pricing helpers ─────────────────────────────────────────────────────────
-  const priceFor = useCallback((product: Product): number => {
-    if (activeProClient) {
-      const override = activeProClient.priceOverrides[product.id];
-      if (override !== undefined && override !== null) return override;
-    }
-    return product.price;
-  }, [activeProClient]);
-
-  // Price after discount (for non-pro standard display)
-  const effectivePrice = useCallback((product: Product): number => {
-    const base = priceFor(product);
-    if (!activeProClient && product.discount) {
-      return parseFloat((base * (1 - product.discount / 100)).toFixed(2));
-    }
-    return base;
-  }, [priceFor, activeProClient]);
-
-  // ── Cart ────────────────────────────────────────────────────────────────────
-  const addToCart = useCallback((product: Product) => {
-    const ep = effectivePrice(product);
-    setCart(prev => {
-      const ex = prev.find(i => i.id === product.id);
-      return ex
-        ? prev.map(i => i.id === product.id ? { ...i, quantity: i.quantity + 1 } : i)
-        : [...prev, { ...product, quantity: 1, effectivePrice: ep }];
-    });
-  }, [effectivePrice]);
-
-  const removeFromCart  = useCallback((id: string) => setCart(p => p.filter(i => i.id !== id)), []);
-  const updateQty       = useCallback((id: string, qty: number) => {
-    if (qty <= 0) { removeFromCart(id); return; }
-    setCart(p => p.map(i => i.id === id ? { ...i, quantity: qty } : i));
-  }, [removeFromCart]);
-  const clearCart = useCallback(() => setCart([]), []);
-
-  const cartTotal = useMemo(() => cart.reduce((s, i) => s + i.effectivePrice * i.quantity, 0), [cart]);
-  const cartCount = useMemo(() => cart.reduce((s, i) => s + i.quantity, 0), [cart]);
-
-  // ── Auth ────────────────────────────────────────────────────────────────────
-  const login = useCallback((pw: string): boolean => {
-    if (pw === ADMIN_PASSWORD) { sessionStorage.setItem(SS_ADMIN, 'yes'); setAdminAuth(true); return true; }
-    return false;
-  }, []);
-
-  const logout = useCallback(() => {
-    sessionStorage.removeItem(SS_ADMIN);
-    setAdminAuth(false);
-    navigate('home');
-  }, [navigate]);
-
-  // ── Pro client auth ─────────────────────────────────────────────────────────
-  const loginProClient = useCallback((code: string): boolean => {
-    const client = proClients.find(c => c.accessCode === code.trim());
-    if (client) {
-      sessionStorage.setItem(SS_PRO_CLIENT, JSON.stringify(client));
-      setActiveProClient(client);
-      setProLoginOpen(false);
-      return true;
-    }
-    return false;
-  }, [proClients]);
-
-  const logoutProClient = useCallback(() => {
-    sessionStorage.removeItem(SS_PRO_CLIENT);
-    setActiveProClient(null);
-  }, []);
-
-  // ── Pro clients CRUD ────────────────────────────────────────────────────────
-  const addProClient = useCallback((name: string, company?: string): ProClient => {
-    const existing = proClients.map(c => c.accessCode);
-    const newClient: ProClient = {
-      id: `pc${Date.now()}`,
-      name,
-      company,
-      accessCode: gen6DigitCode(existing),
-      priceOverrides: {},
-      purchaseHistory: [],
-      createdAt: new Date().toISOString().split('T')[0],
-    };
-    setProClients(prev => [...prev, newClient]);
-    return newClient;
-  }, [proClients]);
-
-  const updateProClient = useCallback((c: ProClient) => {
-    setProClients(prev => prev.map(x => x.id === c.id ? c : x));
-  }, []);
-
-  const deleteProClient = useCallback((id: string) => {
-    setProClients(prev => prev.filter(x => x.id !== id));
-    if (activeProClient?.id === id) logoutProClient();
-  }, [activeProClient, logoutProClient]);
-
-  const setPriceOverride = useCallback((clientId: string, productId: string, price: number | null) => {
-    setProClients(prev => prev.map(c => {
-      if (c.id !== clientId) return c;
-      const overrides = { ...c.priceOverrides };
-      if (price === null) delete overrides[productId];
-      else overrides[productId] = price;
-      return { ...c, priceOverrides: overrides };
-    }));
-  }, []);
-
-  const recordOrder = useCallback((clientId: string, order: OrderRecord) => {
-    setProClients(prev => prev.map(c =>
-      c.id === clientId
-        ? { ...c, purchaseHistory: [order, ...c.purchaseHistory] }
-        : c
-    ));
-  }, []);
-
-  // ── Product CRUD ────────────────────────────────────────────────────────────
-  const addProduct    = useCallback((p: Omit<Product, 'id'>) =>
-    setProducts(prev => [...prev, { ...p, id: `p${Date.now()}` }]), []);
-  const updateProduct = useCallback((p: Product) =>
-    setProducts(prev => prev.map(x => x.id === p.id ? p : x)), []);
-  const deleteProduct = useCallback((id: string) => {
-    setProducts(prev => prev.filter(x => x.id !== id));
-    setCart(prev => prev.filter(x => x.id !== id));
-  }, []);
-
-  // ── Shopify checkout (fallback) ─────────────────────────────────────────────
-  const checkout = useCallback(() => {
-    if (!cart.length) return;
-    const str = cart.map(i => `${i.variantId}:${i.quantity}`).join(',');
-    window.open(`https://${SHOPIFY_STORE}.myshopify.com/cart/${str}`, '_blank');
-  }, [cart]);
-
-  return (
-    <AppContext.Provider value={{
-      products, addProduct, updateProduct, deleteProduct,
-      cart, cartOpen, setCartOpen, addToCart, removeFromCart, updateQty,
-      clearCart, cartTotal, cartCount,
-      priceFor, effectivePrice,
-      page, navigate,
-      searchQuery, setSearchQuery, submitSearch,
-      adminAuth, login, logout,
-      proClients, addProClient, updateProClient, deleteProClient,
-      setPriceOverride,
-      activeProClient, loginProClient, logoutProClient, recordOrder,
-      proLoginOpen, setProLoginOpen,
-      checkoutOpen, setCheckoutOpen,
-      checkout,
-    }}>
-      {children}
-    </AppContext.Provider>
-  );
-}
-
-// eslint-disable-next-line react-refresh/only-export-components
-export function useApp(): AppContextType {
-  const ctx = useContext(AppContext);
-  if (!ctx) throw new Error('useApp must be used inside <AppProvider>');
-  return ctx;
 }
 </file>
 
@@ -2377,7 +2218,8 @@ dist/
     "jspdf-autotable": "^3.8.2",
     "lucide-react": "^0.383.0",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "resend": "^6.12.3"
   },
   "devDependencies": {
     "@types/node": "^25.7.0",
@@ -2625,114 +2467,6 @@ export default function Footer() {
       </div>
     </footer>
   );
-}
-</file>
-
-<file path="src/components/Logo.tsx">
-/**
- * Express Food SVG logo — redrawn to match brand image exactly.
- * Red circle arc + speed lines, green diamond arrow, green car + fork inside.
- */
-interface Props {
-  size?: number;
-  variant?: 'full' | 'mark';
-  className?: string;
-}
-
-export default function Logo({ size = 40, variant = 'full', className = '' }: Props) {
-  const iconH = size;
-  const iconW = size * 1.1;
-
-  return (
-    <div className={`flex items-center gap-2 ${className}`} aria-label="Express Food">
-      <LogoMark width={iconW} height={iconH} />
-      {variant === 'full' && (
-        <div
-          className="leading-none select-none"
-          style={{ fontWeight: 900, letterSpacing: '-0.01em' }}
-        >
-          <span style={{ fontSize: size * 0.46, color: '#E31E24' }}>EXPRESS </span>
-          <span style={{ fontSize: size * 0.46, color: '#2D8A2D' }}>FOOD</span>
-        </div>
-      )}
-    </div>
-  );
-}
-
-/** Standalone icon mark — use this anywhere you need just the emblem */
-export function LogoMark({ width, height }: { width: number; height: number }) {
-  return (
-    <svg
-      width={width}
-      height={height}
-      viewBox="0 0 200 170"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      aria-hidden="true"
-    >
-      {/* ── Red speed / swoosh lines (left side) ── */}
-      <line x1="2"  y1="72"  x2="52"  y2="72"  stroke="#E31E24" strokeWidth="9"  strokeLinecap="round"/>
-      <line x1="10" y1="90"  x2="46"  y2="90"  stroke="#E31E24" strokeWidth="7"  strokeLinecap="round"/>
-      <line x1="18" y1="106" x2="44"  y2="106" stroke="#E31E24" strokeWidth="5"  strokeLinecap="round"/>
-
-      {/* ── Red open circle arc (the ring around the emblem) ── */}
-      {/* Top arc */}
-      <path
-        d="M 54 85 A 52 52 0 1 1 54 87"
-        stroke="#E31E24"
-        strokeWidth="9"
-        strokeLinecap="round"
-        fill="none"
-        /* Cut the left side open where the speed lines are */
-        strokeDasharray="240 999"
-        strokeDashoffset="-30"
-      />
-
-      {/* ── Green diamond / arrow (points right) ── */}
-      <polygon
-        points="100,38  162,85  100,132  70,85"
-        fill="#2D8A2D"
-      />
-
-      {/* ── Green car body ── */}
-      {/* Main cabin */}
-      <rect x="76" y="72" width="72" height="30" rx="7" fill="#2D8A2D"/>
-      {/* Roof / windshield area */}
-      <rect x="88" y="58" width="42" height="22" rx="6" fill="#2D8A2D"/>
-      {/* Windshield glass highlight */}
-      <rect x="91" y="61" width="36" height="16" rx="4" fill="#1a3d1a" opacity="0.55"/>
-      {/* Front bumper */}
-      <rect x="140" y="80" width="10" height="14" rx="3" fill="#2D8A2D"/>
-      {/* Rear bumper */}
-      <rect x="68"  y="80" width="10" height="14" rx="3" fill="#2D8A2D"/>
-
-      {/* ── Wheels ── */}
-      <circle cx="90"  cy="104" r="11" fill="#111" stroke="#111" strokeWidth="2"/>
-      <circle cx="90"  cy="104" r="5"  fill="#2D8A2D"/>
-      <circle cx="130" cy="104" r="11" fill="#111" stroke="#111" strokeWidth="2"/>
-      <circle cx="130" cy="104" r="5"  fill="#2D8A2D"/>
-
-      {/* ── Fork overlaid on the car (white) ── */}
-      {/* Handle */}
-      <line x1="108" y1="52" x2="108" y2="86" stroke="white" strokeWidth="3" strokeLinecap="round"/>
-      {/* Tines */}
-      <line x1="103" y1="52" x2="103" y2="63" stroke="white" strokeWidth="2.5" strokeLinecap="round"/>
-      <line x1="108" y1="52" x2="108" y2="63" stroke="white" strokeWidth="2.5" strokeLinecap="round"/>
-      <line x1="113" y1="52" x2="113" y2="63" stroke="white" strokeWidth="2.5" strokeLinecap="round"/>
-      {/* Tine connector curve */}
-      <path d="M103 63 Q108 70 113 63" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round"/>
-    </svg>
-  );
-}
-
-/** Dark-background variant — header/footer (default usage) */
-export function LogoDark({ size = 40, className = '' }: Omit<Props, 'variant'>) {
-  return <Logo size={size} variant="full" className={className} />;
-}
-
-/** Light-background variant — same emblem, wordmark colors stay */
-export function LogoLight({ size = 40, className = '' }: Omit<Props, 'variant'>) {
-  return <Logo size={size} variant="full" className={className} />;
 }
 </file>
 
@@ -3515,6 +3249,40 @@ export const SEED_PRO_CLIENTS: ProClient[] = [
 ];
 </file>
 
+<file path="tsconfig.json">
+{
+  "compilerOptions": {
+    "types": ["node"],
+    "target": "ES2020",
+    "useDefineForClassFields": true,
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "skipLibCheck": true,
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "strict": false,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "noFallthroughCasesInSwitch": true
+  },
+  "include": ["src", "api"],
+  "references": [{ "path": "./tsconfig.node.json" }]
+}
+</file>
+
+<file path="vercel.json">
+{
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/$1" },
+    { "source": "/(.*)",     "destination": "/index.html" }
+  ]
+}
+</file>
+
 <file path="src/pages/AdminDashboard.tsx">
 import { useState, useRef, useMemo } from 'react';
 import {
@@ -3844,6 +3612,7 @@ function ProClientsTab() {
   const [catFilter,      setCatFilter]      = useState('All');
   const [overrideInputs, setOverrideInputs] = useState<Record<string, string>>({});
   const [overrideSearch, setOverrideSearch] = useState('');
+  const [newEmail, setNewEmail] = useState('');
 
   const handleAddClient = () => {
     if (!newName.trim()) { setAddErr('Le nom est requis.'); return; }
@@ -3971,6 +3740,13 @@ function ProClientsTab() {
             <label className="text-xs font-black text-gray-500 uppercase block mb-1">Société (optionnel)</label>
             <input type="text" value={newCompany} onChange={e => setNewCompany(e.target.value)}
               placeholder="SARL Le Marrakchi"
+              className="w-full border px-3 py-2 text-sm rounded-sm focus:outline-none"
+              style={{ borderColor: '#e5e5e5' }} />
+          </div>
+          <div className="flex-1 min-w-40">
+            <label className="text-xs font-black text-gray-500 uppercase block mb-1">Email Pro (optionnel)</label>
+            <input type="email" value={newEmail} onChange={e => setNewEmail(e.target.value)}
+              placeholder="client@restaurant.com"
               className="w-full border px-3 py-2 text-sm rounded-sm focus:outline-none"
               style={{ borderColor: '#e5e5e5' }} />
           </div>
@@ -4458,15 +4234,13 @@ export interface ProClient {
   id: string; name: string; company?: string;
   accessCode: string; priceOverrides: PriceOverrides;
   purchaseHistory: OrderRecord[]; createdAt: string;
+  email?: string;
 }
 
 // ── Context ───────────────────────────────────────────────────────────────────
 
 export interface AppContextType {
   products: Product[];
-  globalOrders:      GlobalOrder[];
-  addGlobalOrder:    (order: GlobalOrder) => void;
-  updateOrderStatus: (orderId: string, status: GlobalOrder['status']) => void;
   addProduct: (p: Omit<Product, 'id'>) => void;
   updateProduct: (p: Product) => void;
   deleteProduct: (id: string) => void;
@@ -4540,37 +4314,264 @@ export interface GlobalOrder {
 }
 </file>
 
-<file path="tsconfig.json">
-{
-  "compilerOptions": {
-    "types": ["node"],
-    "target": "ES2020",
-    "useDefineForClassFields": true,
-    "lib": ["ES2020", "DOM", "DOM.Iterable"],
-    "module": "ESNext",
-    "skipLibCheck": true,
-    "moduleResolution": "bundler",
-    "allowImportingTsExtensions": true,
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "noEmit": true,
-    "jsx": "react-jsx",
-    "strict": false,
-    "noUnusedLocals": false,
-    "noUnusedParameters": false,
-    "noFallthroughCasesInSwitch": true
-  },
-  "include": ["src", "api"],
-  "references": [{ "path": "./tsconfig.node.json" }]
-}
-</file>
+<file path="src/context/AppContext.tsx">
+import {
+  createContext, useContext, useState, useEffect,
+  useCallback, useMemo, type ReactNode,
+} from 'react';
+import type { Product, CartItem, AppContextType, PageKey, ProClient, OrderRecord } from '../types';
+import { SEED_PRODUCTS, SEED_PRO_CLIENTS } from '../data/products';
+import {
+  ADMIN_ROUTE, ADMIN_PASSWORD, SHOPIFY_STORE,
+  LS_PRODUCTS, LS_CART, LS_PRO_CLIENTS,
+  SS_ADMIN, SS_PRO_CLIENT,
+} from '../data/constants';
 
-<file path="vercel.json">
-{
-  "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api/$1" },
-    { "source": "/(.*)",     "destination": "/index.html" }
-  ]
+// ── Storage helpers ───────────────────────────────────────────────────────────
+function readLS<T>(key: string, fallback: T): T {
+  try { const r = localStorage.getItem(key); return r ? JSON.parse(r) : fallback; }
+  catch { return fallback; }
+}
+function writeLS(key: string, val: unknown) {
+  try { localStorage.setItem(key, JSON.stringify(val)); } catch {}
+}
+
+function initialPage(): PageKey {
+  const h = window.location.hash.replace(/^#\/?/, '');
+  if (h === ADMIN_ROUTE) return 'admin';
+  if (h === 'products')  return 'products';
+  return 'home';
+}
+
+// ── 6-digit code generator ────────────────────────────────────────────────────
+function gen6DigitCode(existing: string[]): string {
+  let code: string;
+  do { code = String(Math.floor(100000 + Math.random() * 900000)); }
+  while (existing.includes(code));
+  return code;
+}
+
+const AppContext = createContext<AppContextType | null>(null);
+
+export const LS_GLOBAL_ORDERS = 'ef_global_orders';
+
+export function AppProvider({ children }: { children: ReactNode }) {
+
+  // ── Cache busting — bump version whenever SEED_PRODUCTS changes ──────────
+  const CACHE_VERSION = 'v2';
+  if (localStorage.getItem('ef_version') !== CACHE_VERSION) {
+    localStorage.removeItem('ef_products');
+    localStorage.setItem('ef_version', CACHE_VERSION);
+  }
+
+  const [products,  setProducts]  = useState<Product[]>   (() => readLS(LS_PRODUCTS,    SEED_PRODUCTS));
+  const [cart,      setCart]      = useState<CartItem[]>   (() => readLS(LS_CART,        []));
+  const [proClients,setProClients]= useState<ProClient[]>  (() => readLS(LS_PRO_CLIENTS, SEED_PRO_CLIENTS));
+  const [cartOpen,  setCartOpen]  = useState(false);
+  const [adminAuth, setAdminAuth] = useState(() => sessionStorage.getItem(SS_ADMIN) === 'yes');
+  const [page,      setPage]      = useState<PageKey>(initialPage);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [proLoginOpen,  setProLoginOpen]  = useState(false);
+  const [checkoutOpen,  setCheckoutOpen]  = useState(false);
+  const [activeProClient, setActiveProClient] = useState<ProClient | null>(() => {
+    try {
+      const s = sessionStorage.getItem(SS_PRO_CLIENT);
+      if (!s) return null;
+      const saved = JSON.parse(s) as ProClient;
+      // Refresh from proClients state in case overrides changed
+      return saved;
+    } catch { return null; }
+  });
+
+  useEffect(() => writeLS(LS_PRODUCTS,    products),   [products]);
+  useEffect(() => writeLS(LS_CART,        cart),       [cart]);
+  useEffect(() => writeLS(LS_PRO_CLIENTS, proClients), [proClients]);
+
+  // Sync active pro client when proClients list changes
+  useEffect(() => {
+    if (activeProClient) {
+      const refreshed = proClients.find(c => c.id === activeProClient.id);
+      if (refreshed) {
+        setActiveProClient(refreshed);
+        sessionStorage.setItem(SS_PRO_CLIENT, JSON.stringify(refreshed));
+      }
+    }
+  }, [proClients]); // eslint-disable-line
+
+  // Hash router
+  const navigate = useCallback((p: PageKey) => {
+    setPage(p);
+    window.location.hash = p === 'home' ? '' : p;
+    window.scrollTo({ top: 0 });
+  }, []);
+
+  useEffect(() => {
+    const onHash = () => setPage(initialPage());
+    window.addEventListener('hashchange', onHash);
+    return () => window.removeEventListener('hashchange', onHash);
+  }, []);
+
+  // Search
+  const submitSearch = useCallback((q: string) => {
+    setSearchQuery(q);
+    navigate('products');
+  }, [navigate]);
+
+  // ── Pricing helpers ─────────────────────────────────────────────────────────
+  const priceFor = useCallback((product: Product): number => {
+    if (activeProClient) {
+      const override = activeProClient.priceOverrides[product.id];
+      if (override !== undefined && override !== null) return override;
+    }
+    return product.price;
+  }, [activeProClient]);
+
+  // Price after discount (for non-pro standard display)
+  const effectivePrice = useCallback((product: Product): number => {
+    const base = priceFor(product);
+    if (!activeProClient && product.discount) {
+      return parseFloat((base * (1 - product.discount / 100)).toFixed(2));
+    }
+    return base;
+  }, [priceFor, activeProClient]);
+
+  // ── Cart ────────────────────────────────────────────────────────────────────
+  const addToCart = useCallback((product: Product) => {
+    const ep = effectivePrice(product);
+    setCart(prev => {
+      const ex = prev.find(i => i.id === product.id);
+      return ex
+        ? prev.map(i => i.id === product.id ? { ...i, quantity: i.quantity + 1 } : i)
+        : [...prev, { ...product, quantity: 1, effectivePrice: ep }];
+    });
+  }, [effectivePrice]);
+
+  const removeFromCart  = useCallback((id: string) => setCart(p => p.filter(i => i.id !== id)), []);
+  const updateQty       = useCallback((id: string, qty: number) => {
+    if (qty <= 0) { removeFromCart(id); return; }
+    setCart(p => p.map(i => i.id === id ? { ...i, quantity: qty } : i));
+  }, [removeFromCart]);
+  const clearCart = useCallback(() => setCart([]), []);
+
+  const cartTotal = useMemo(() => cart.reduce((s, i) => s + i.effectivePrice * i.quantity, 0), [cart]);
+  const cartCount = useMemo(() => cart.reduce((s, i) => s + i.quantity, 0), [cart]);
+
+  // ── Auth ────────────────────────────────────────────────────────────────────
+  const login = useCallback((pw: string): boolean => {
+    if (pw === ADMIN_PASSWORD) { sessionStorage.setItem(SS_ADMIN, 'yes'); setAdminAuth(true); return true; }
+    return false;
+  }, []);
+
+  const logout = useCallback(() => {
+    sessionStorage.removeItem(SS_ADMIN);
+    setAdminAuth(false);
+    navigate('home');
+  }, [navigate]);
+
+  // ── Pro client auth ─────────────────────────────────────────────────────────
+  const loginProClient = useCallback((code: string): boolean => {
+    const client = proClients.find(c => c.accessCode === code.trim());
+    if (client) {
+      sessionStorage.setItem(SS_PRO_CLIENT, JSON.stringify(client));
+      setActiveProClient(client);
+      setProLoginOpen(false);
+      return true;
+    }
+    return false;
+  }, [proClients]);
+
+  const logoutProClient = useCallback(() => {
+    sessionStorage.removeItem(SS_PRO_CLIENT);
+    setActiveProClient(null);
+  }, []);
+
+  // ── Pro clients CRUD ────────────────────────────────────────────────────────
+  const addProClient = useCallback((name: string, company?: string, email?: string): ProClient => {
+    const existing = proClients.map(c => c.accessCode);
+    const newClient: ProClient = {
+      id: `pc${Date.now()}`,
+      name,
+      company,
+      email,
+      accessCode: gen6DigitCode(existing),
+      priceOverrides: {},
+      purchaseHistory: [],
+      createdAt: new Date().toISOString().split('T')[0],
+    };
+    setProClients(prev => [...prev, newClient]);
+    return newClient;
+  }, [proClients]);
+
+  const updateProClient = useCallback((c: ProClient) => {
+    setProClients(prev => prev.map(x => x.id === c.id ? c : x));
+  }, []);
+
+  const deleteProClient = useCallback((id: string) => {
+    setProClients(prev => prev.filter(x => x.id !== id));
+    if (activeProClient?.id === id) logoutProClient();
+  }, [activeProClient, logoutProClient]);
+
+  const setPriceOverride = useCallback((clientId: string, productId: string, price: number | null) => {
+    setProClients(prev => prev.map(c => {
+      if (c.id !== clientId) return c;
+      const overrides = { ...c.priceOverrides };
+      if (price === null) delete overrides[productId];
+      else overrides[productId] = price;
+      return { ...c, priceOverrides: overrides };
+    }));
+  }, []);
+
+  const recordOrder = useCallback((clientId: string, order: OrderRecord) => {
+    setProClients(prev => prev.map(c =>
+      c.id === clientId
+        ? { ...c, purchaseHistory: [order, ...c.purchaseHistory] }
+        : c
+    ));
+  }, []);
+
+  // ── Product CRUD ────────────────────────────────────────────────────────────
+  const addProduct    = useCallback((p: Omit<Product, 'id'>) =>
+    setProducts(prev => [...prev, { ...p, id: `p${Date.now()}` }]), []);
+  const updateProduct = useCallback((p: Product) =>
+    setProducts(prev => prev.map(x => x.id === p.id ? p : x)), []);
+  const deleteProduct = useCallback((id: string) => {
+    setProducts(prev => prev.filter(x => x.id !== id));
+    setCart(prev => prev.filter(x => x.id !== id));
+  }, []);
+
+  // ── Shopify checkout (fallback) ─────────────────────────────────────────────
+  const checkout = useCallback(() => {
+    if (!cart.length) return;
+    const str = cart.map(i => `${i.variantId}:${i.quantity}`).join(',');
+    window.open(`https://${SHOPIFY_STORE}.myshopify.com/cart/${str}`, '_blank');
+  }, [cart]);
+
+  return (
+    <AppContext.Provider value={{
+      products, addProduct, updateProduct, deleteProduct,
+      cart, cartOpen, setCartOpen, addToCart, removeFromCart, updateQty,
+      clearCart, cartTotal, cartCount,
+      priceFor, effectivePrice,
+      page, navigate,
+      searchQuery, setSearchQuery, submitSearch,
+      adminAuth, login, logout,
+      proClients, addProClient, updateProClient, deleteProClient,
+      setPriceOverride,
+      activeProClient, loginProClient, logoutProClient, recordOrder,
+      proLoginOpen, setProLoginOpen,
+      checkoutOpen, setCheckoutOpen,
+      checkout,
+    }}>
+      {children}
+    </AppContext.Provider>
+  );
+}
+
+// eslint-disable-next-line react-refresh/only-export-components
+export function useApp(): AppContextType {
+  const ctx = useContext(AppContext);
+  if (!ctx) throw new Error('useApp must be used inside <AppProvider>');
+  return ctx;
 }
 </file>
 
@@ -4829,9 +4830,44 @@ function buildDoc(opts: PdfOptions): jsPDF {
 }
 </file>
 
-<file path="src/components/CheckoutModal.tsx">
-// src/components/CheckoutModal.tsx
+<file path="src/components/Logo.tsx">
+interface Props {
+  size?: number;
+  variant?: 'full' | 'mark';
+  className?: string;
+}
 
+export default function Logo({ size = 40, className = '' }: Props) {
+  return (
+    <img
+      src="/logo.png"
+      alt="Express Food"
+      style={{ height: size * 1.4, width: 'auto', objectFit: 'contain' }}
+      className={className}
+    />
+  );
+}
+
+export function LogoMark({ width, height }: { width: number; height: number }) {
+  return (
+    <img
+      src="/logo.png"
+      alt="Express Food"
+      style={{ height: height * 1.4, width: 'auto', objectFit: 'contain' }}
+    />
+  );
+}
+
+export function LogoDark({ size = 40, className = '' }: Omit<Props, 'variant'>) {
+  return <Logo size={size} className={className} />;
+}
+
+export function LogoLight({ size = 40, className = '' }: Omit<Props, 'variant'>) {
+  return <Logo size={size} className={className} />;
+}
+</file>
+
+<file path="src/components/CheckoutModal.tsx">
 import { useState } from "react";
 import {
   X, ShoppingBag, User, Phone, Mail,
@@ -4847,111 +4883,120 @@ function generateOrderRef(): string {
 type SubmitState = "idle" | "loading" | "success" | "error";
 
 export default function CheckoutModal() {
-  const { cart, checkoutOpen, setCheckoutOpen, clearCart, activeProClient, addGlobalOrder } = useApp();
+  const { cart, checkoutOpen, setCheckoutOpen, clearCart, activeProClient } = useApp();
 
   const [name,        setName]        = useState("");
   const [phone,       setPhone]       = useState("");
   const [email,       setEmail]       = useState("");
   const [submitState, setSubmitState] = useState<SubmitState>("idle");
-  const [webhookError,setWebhookError]= useState<string | null>(null);
+  const [errorMsg,    setErrorMsg]    = useState<string | null>(null);
 
   if (!checkoutOpen) return null;
 
   const isPro = !!activeProClient;
   const orderTotal = cart.reduce((s, i) => s + i.effectivePrice * i.quantity, 0);
-  
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!name.trim() || !phone.trim()) return;
+  async function handleSubmit() {
+    // Pro clients skip form — just need a name
+    if (!isPro && (!name.trim() || !phone.trim() || !email.trim())) return;
+
     setSubmitState("loading");
-    setWebhookError(null);
+    setErrorMsg(null);
 
     const orderRef = generateOrderRef();
+    const items = cart.map(i => ({
+      name: i.name,
+      quantity: i.quantity,
+      unitPrice: i.effectivePrice,
+      totalPrice: i.effectivePrice * i.quantity,
+      unit: i.unit,
+      productId: i.id,
+      total: i.effectivePrice * i.quantity,
+    }));
+
     const basePdfOpts = {
       orderRef,
-      clientName:    name.trim(),
-      clientPhone:   phone.trim(),
-      clientEmail:   email.trim() || undefined,
+      clientName:    isPro ? activeProClient!.name : name.trim(),
+      clientPhone:   isPro ? '' : phone.trim(),
+      clientEmail:   isPro ? activeProClient!.email : email.trim(),
       isProClient:   isPro,
       proClientName: activeProClient?.name,
-      items: cart.map(i => ({
-        name: i.name, quantity: i.quantity,
-        unitPrice: i.effectivePrice, totalPrice: i.effectivePrice * i.quantity,
-      })),
+      items,
       orderTotal,
     };
 
-    // Both PDF blobs for Discord
-    const pdfWithPrices    = generatePDFBlob({ ...basePdfOpts, withPrices: true });
-    const pdfWithoutPrices = generatePDFBlob({ ...basePdfOpts, withPrices: false });
-
-    const itemsText = cart.map(i =>
-      `> **${i.name}** — ×${i.quantity} — ${(i.effectivePrice * i.quantity).toFixed(2)} €`
-    ).join("\n");
-
-    const discordEmbed = {
-      embeds: [{
-        title: `🛒 Nouvelle Commande — #${orderRef}`,
-        color: isPro ? 0x2d8a2d : 0xe31e24,
-        fields: [
-          { name: "👤 Client",    value: name.trim(),         inline: true },
-          { name: "📞 Téléphone", value: phone.trim(),        inline: true },
-          { name: "📧 Email",     value: email.trim() || "—", inline: true },
-          { name: isPro ? "⭐ Compte Pro" : "👤 Type client",
-            value: isPro ? activeProClient!.name : "Client Standard", inline: true },
-          { name: "🧾 Articles", value: itemsText, inline: false },
-          { name: "💰 Total TTC", value: `**${orderTotal.toFixed(2)} €**`, inline: false },
-          { name: "📎 Pièces jointes", value: "① Avec prix · ② Sans prix", inline: false },
-        ],
-        footer: { text: `Express Food • ${new Date().toLocaleDateString("fr-FR", { day:"2-digit", month:"long", year:"numeric" })}` },
-      }],
-    };
-
     try {
+      // ── Discord webhook ──────────────────────────────────────────────────
+      const pdfWithPrices    = generatePDFBlob({ ...basePdfOpts, withPrices: true });
+      const pdfWithoutPrices = generatePDFBlob({ ...basePdfOpts, withPrices: false });
+
+      const itemsText = cart.map(i =>
+        `> **${i.name}** — ×${i.quantity}${!isPro ? ` — ${(i.effectivePrice * i.quantity).toFixed(2)} €` : ''}`
+      ).join("\n");
+
+      const discordEmbed = {
+        embeds: [{
+          title: `🛒 Nouvelle Commande — #${orderRef}`,
+          color: isPro ? 0x2d8a2d : 0xe31e24,
+          fields: [
+            isPro
+              ? { name: "⭐ Compte Pro", value: activeProClient!.name, inline: true }
+              : { name: "👤 Client",    value: name.trim(),            inline: true },
+            !isPro && { name: "📞 Téléphone", value: phone.trim(), inline: true },
+            !isPro && { name: "📧 Email",     value: email.trim(), inline: true },
+            { name: "🧾 Articles", value: itemsText, inline: false },
+            !isPro && { name: "💰 Total TTC", value: `**${orderTotal.toFixed(2)} €**`, inline: false },
+          ].filter(Boolean),
+          footer: { text: `Express Food • ${new Date().toLocaleDateString("fr-FR")}` },
+        }],
+      };
+
       const form = new FormData();
       form.append("payload_json", JSON.stringify(discordEmbed));
       form.append("files[0]", pdfWithPrices,    `commande_EF-${orderRef}_avec-prix.pdf`);
       form.append("files[1]", pdfWithoutPrices, `commande_EF-${orderRef}_sans-prix.pdf`);
-      const res = await fetch("/api/notify-multipart", { method: "POST", body: form });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      setSubmitState("success");
-      addGlobalOrder({
-        orderId:      orderRef,
-        date:         new Date().toISOString(),
-        clientName:   name.trim(),
-        clientPhone:  phone.trim(),
-        clientEmail:  email.trim(),
-        isProClient:  isPro,
-        proClientId:  activeProClient?.id,
-        proClientName: activeProClient?.name,
-        items: cart.map(i => ({
-          productId:  i.id,
-          name:       i.name,
-          unit:       i.unit,
-          quantity:   i.quantity,
-          unitPrice:  i.effectivePrice,
-          total:      i.effectivePrice * i.quantity,
-        })),
-        orderTotal,
-        status: 'confirmed',
+
+      await fetch("/api/notify-multipart", {
+        method: "POST",
+        headers: { 'x-is-pro': String(isPro) },
+        body: form,
       });
+
+      // ── Send emails ──────────────────────────────────────────────────────
+      await fetch("/api/send-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          isPro,
+          clientName:    isPro ? activeProClient!.name : name.trim(),
+          clientEmail:   isPro ? activeProClient!.email : email.trim(),
+          proClientName: activeProClient?.name,
+          proClientEmail: activeProClient?.email,
+          orderRef,
+          items,
+          orderTotal,
+        }),
+      });
+
+      // ── Download PDF ─────────────────────────────────────────────────────
+      generatePDF({ ...basePdfOpts, withPrices: !isPro });
+      clearCart();
+      setSubmitState("success");
+
     } catch (err: any) {
-      console.error("[Discord] failed:", err);
-      setWebhookError(`Notification Discord échouée (${err?.message ?? "erreur réseau"}).`);
+      setErrorMsg(err?.message ?? "Erreur réseau");
       setSubmitState("error");
     }
-
-    // Client PDF: normal client gets WITH prices, pro WITHOUT prices
-    generatePDF({ ...basePdfOpts, withPrices: !isPro });
-    clearCart();
   }
 
   function handleClose() {
-    setCheckoutOpen(false); setSubmitState("idle");
-    setName(""); setPhone(""); setEmail(""); setWebhookError(null);
+    setCheckoutOpen(false);
+    setSubmitState("idle");
+    setName(""); setPhone(""); setEmail("");
+    setErrorMsg(null);
   }
 
+  // ── Success / Error screen ─────────────────────────────────────────────────
   if (submitState === "success" || submitState === "error") {
     return (
       <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -4963,16 +5008,15 @@ export default function CheckoutModal() {
               : <AlertCircle className="w-9 h-9" style={{ color: "#E31E24" }} />}
           </div>
           <h2 className="text-2xl font-bold text-gray-900 mb-2">
-            {submitState === "success" ? "Commande confirmée !" : "Commande reçue"}
+            {submitState === "success" ? "Commande confirmée !" : "Une erreur est survenue"}
           </h2>
           <p className="text-gray-500 text-sm mb-2">
-            {isPro
-              ? "Votre bon de commande (sans prix) a été téléchargé."
-              : "Votre PDF avec le détail des prix a été téléchargé."}
+            {submitState === "success"
+              ? isPro
+                ? "Votre bon de commande a été téléchargé. Un email de confirmation a été envoyé."
+                : "Votre PDF avec le détail des prix a été téléchargé. Un email de confirmation a été envoyé."
+              : errorMsg}
           </p>
-          {submitState === "error" && webhookError && (
-            <p className="text-xs text-orange-600 bg-orange-50 rounded-lg px-3 py-2 mt-2 mb-2">⚠️ {webhookError}</p>
-          )}
           <button onClick={handleClose}
             className="mt-6 w-full py-3 rounded-xl font-semibold text-white"
             style={{ backgroundColor: "#E31E24" }}>Fermer</button>
@@ -4981,10 +5025,80 @@ export default function CheckoutModal() {
     );
   }
 
+  // ── Pro client — no form needed ────────────────────────────────────────────
+  if (isPro) {
+    return (
+      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+          <div className="flex items-center justify-between p-6 border-b border-gray-100">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center"
+                style={{ backgroundColor: "#2D8A2D15" }}>
+                <ShoppingBag className="w-5 h-5" style={{ color: "#2D8A2D" }} />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-gray-900">Confirmer la commande</h2>
+                <p className="text-xs text-gray-400 mt-0.5">Compte Pro — {activeProClient!.name}</p>
+              </div>
+            </div>
+            <button onClick={handleClose}
+              className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
+              <X className="w-4 h-4 text-gray-500" />
+            </button>
+          </div>
+
+          <div className="p-6 space-y-4">
+            {/* Order summary */}
+            <div className="rounded-xl overflow-hidden border border-gray-100">
+              <div className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-gray-400 bg-gray-50">
+                Récapitulatif
+              </div>
+              <div className="divide-y divide-gray-50">
+                {cart.map(item => (
+                  <div key={item.id} className="flex justify-between items-center px-4 py-3">
+                    <span className="text-sm font-medium text-gray-800">{item.name}</span>
+                    <div className="flex items-center gap-3">
+                      <span className="text-xs text-gray-400">× {item.quantity}</span>
+                      <span className="flex items-center gap-1 text-xs font-semibold"
+                        style={{ color: "#2D8A2D" }}>
+                        <Lock size={10} /> Pro
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="flex items-center gap-2 px-4 py-3 font-bold text-white"
+                style={{ backgroundColor: "#2D8A2D" }}>
+                <Lock size={14} />
+                <span>Total confidentiel — Compte Pro</span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 px-4 py-3 rounded-xl text-sm"
+              style={{ backgroundColor: "#2D8A2D15", color: "#2D8A2D" }}>
+              <CheckCircle className="w-4 h-4 flex-shrink-0" />
+              <span>Un bon de commande et un email de confirmation seront envoyés automatiquement.</span>
+            </div>
+
+            <button
+              onClick={handleSubmit}
+              disabled={submitState === "loading"}
+              className="w-full py-4 rounded-xl font-bold text-white text-sm flex items-center justify-center gap-2 disabled:opacity-70"
+              style={{ backgroundColor: "#2D8A2D" }}>
+              {submitState === "loading"
+                ? <><Loader2 className="w-4 h-4 animate-spin" />Traitement…</>
+                : "✅ Confirmer la commande"}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Normal client — form ───────────────────────────────────────────────────
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
-        {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-100">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl flex items-center justify-center"
@@ -4994,7 +5108,7 @@ export default function CheckoutModal() {
             <h2 className="text-xl font-bold text-gray-900">Finaliser la commande</h2>
           </div>
           <button onClick={handleClose}
-            className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center">
+            className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
             <X className="w-4 h-4 text-gray-500" />
           </button>
         </div>
@@ -5012,32 +5126,20 @@ export default function CheckoutModal() {
                     <span className="text-sm font-medium text-gray-800">{item.name}</span>
                     <span className="ml-2 text-xs text-gray-400">× {item.quantity}</span>
                   </div>
-                  {isPro ? (
-                    <span className="flex items-center gap-1 text-xs font-semibold" style={{ color: "#2D8A2D" }}>
-                      <Lock size={10} /> Pro
-                    </span>
-                  ) : (
-                    <span className="text-sm font-semibold text-gray-700">
-                      {(item.effectivePrice * item.quantity).toFixed(2)} €
-                    </span>
-                  )}
+                  <span className="text-sm font-semibold text-gray-700">
+                    {(item.effectivePrice * item.quantity).toFixed(2)} €
+                  </span>
                 </div>
               ))}
             </div>
-            {isPro ? (
-              <div className="flex items-center gap-2 px-4 py-3 font-bold text-white rounded-b-xl"
-                style={{ backgroundColor: "#2D8A2D" }}>
-                <Lock size={14} /><span>Total confidentiel — Compte Pro</span>
-              </div>
-            ) : (
-              <div className="flex justify-between items-center px-4 py-3 font-bold text-white rounded-b-xl"
-                style={{ backgroundColor: "#E31E24" }}>
-                <span>Total TTC</span><span>{orderTotal.toFixed(2)} €</span>
-              </div>
-            )}
+            <div className="flex justify-between items-center px-4 py-3 font-bold text-white"
+              style={{ backgroundColor: "#E31E24" }}>
+              <span>Total TTC</span>
+              <span>{orderTotal.toFixed(2)} €</span>
+            </div>
           </div>
 
-          {/* Form */}
+          {/* Form — email now mandatory */}
           <div className="space-y-4">
             <p className="text-sm font-semibold text-gray-700">Vos coordonnées</p>
             <div className="relative">
@@ -5054,30 +5156,17 @@ export default function CheckoutModal() {
             </div>
             <div className="relative">
               <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <input type="email" placeholder="Email (optionnel)" value={email}
+              <input type="email" placeholder="Email *" required value={email}
                 onChange={e => setEmail(e.target.value)}
                 className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 focus:outline-none text-sm" />
             </div>
           </div>
 
-          {isPro && (
-            <div className="flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-medium"
-              style={{ backgroundColor: "#2D8A2D15", color: "#2D8A2D" }}>
-              <CheckCircle className="w-4 h-4" />
-              Compte Pro : {activeProClient!.name} — bon de commande sans prix.
-            </div>
-          )}
-
-          <p className="text-xs text-gray-400 text-center">
-            {isPro
-              ? "Un bon de commande sans prix sera téléchargé automatiquement."
-              : "Votre PDF avec prix TTC sera téléchargé automatiquement."}
-          </p>
-
-          <button type="button" onClick={handleSubmit}
-            disabled={submitState === "loading" || !name.trim() || !phone.trim()}
+          <button
+            onClick={handleSubmit}
+            disabled={submitState === "loading" || !name.trim() || !phone.trim() || !email.trim()}
             className="w-full py-4 rounded-xl font-bold text-white text-sm flex items-center justify-center gap-2 disabled:opacity-70"
-            style={{ backgroundColor: isPro ? "#2D8A2D" : "#E31E24" }}>
+            style={{ backgroundColor: "#E31E24" }}>
             {submitState === "loading"
               ? <><Loader2 className="w-4 h-4 animate-spin" />Traitement…</>
               : "Confirmer la commande"}

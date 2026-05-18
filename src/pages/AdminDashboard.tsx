@@ -326,10 +326,12 @@ function ProClientsTab() {
   const [catFilter,      setCatFilter]      = useState('All');
   const [overrideInputs, setOverrideInputs] = useState<Record<string, string>>({});
   const [overrideSearch, setOverrideSearch] = useState('');
+  const [newEmail, setNewEmail] = useState('');
 
   const handleAddClient = () => {
     if (!newName.trim()) { setAddErr('Le nom est requis.'); return; }
-    const client = addProClient(newName.trim(), newCompany.trim() || undefined);
+    const client = addProClient(newName.trim(), newCompany.trim() || undefined, newEmail.trim() || undefined);
+    setNewEmail('');
     setLastAdded(client);
     setNewName(''); setNewCompany(''); setAddErr('');
   };
@@ -453,6 +455,13 @@ function ProClientsTab() {
             <label className="text-xs font-black text-gray-500 uppercase block mb-1">Société (optionnel)</label>
             <input type="text" value={newCompany} onChange={e => setNewCompany(e.target.value)}
               placeholder="SARL Le Marrakchi"
+              className="w-full border px-3 py-2 text-sm rounded-sm focus:outline-none"
+              style={{ borderColor: '#e5e5e5' }} />
+          </div>
+          <div className="flex-1 min-w-40">
+            <label className="text-xs font-black text-gray-500 uppercase block mb-1">Email Pro (optionnel)</label>
+            <input type="email" value={newEmail} onChange={e => setNewEmail(e.target.value)}
+              placeholder="client@restaurant.com"
               className="w-full border px-3 py-2 text-sm rounded-sm focus:outline-none"
               style={{ borderColor: '#e5e5e5' }} />
           </div>
