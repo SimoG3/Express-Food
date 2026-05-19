@@ -1,7 +1,9 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { Resend } from 'resend';
+import SibApiV3Sdk from 'sib-api-v3-sdk';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const defaultClient = SibApiV3Sdk.ApiClient.instance;
+defaultClient.authentications['api-key'].apiKey = process.env.BREVO_API_KEY!;
+const client = new SibApiV3Sdk.TransactionalEmailsApi();
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') return res.status(405).end();
@@ -21,12 +23,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     ? process.env.ADMIN_PRO_EMAIL!
     : process.env.ADMIN_NORMAL_EMAIL!;
 
+  const senderEmail = process.env.BREVO_SENDER_EMAIL!;
+  const senderName  = 'Express Food';
+
   const itemsHtml = items.map((i: any) =>
     `<tr>
       <td style="padding:6px 12px;border-bottom:1px solid #f0f0f0">${i.name}</td>
       <td style="padding:6px 12px;border-bottom:1px solid #f0f0f0;text-align:center">${i.quantity}</td>
-      ${!isPro ? `<td style="padding:6px 12px;border-bottom:1px solid #f0f0f0;text-align:right">${i.unitPrice.toFixed(2)} €</td>
-      <td style="padding:6px 12px;border-bottom:1px solid #f0f0f0;text-align:right">${i.total.toFixed(2)} €</td>` : ''}
+      ${!isPro
+        ? `<td style="padding:6px 12px;border-bottom:1px solid #f0f0f0;text-align:right">${i.unitPrice.toFixed(2)} €</td>
+           <td style="padding:6px 12px;border-bottom:1px solid #f0f0f0;text-align:right">${i.total.toFixed(2)} €</td>`
+        : ''}
     </tr>`
   ).join('');
 
@@ -53,14 +60,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             ? `Une nouvelle commande a été passée par le compte Pro <strong>${proClientName}</strong>.`
             : `Une nouvelle commande a été reçue de <strong>${clientName}</strong>.`}
         </p>
-        ${!isPro ? `<p style="color:#555"><strong>Client :</strong> ${clientName}<br/><strong>Email :</strong> ${clientEmail}</p>` : ''}
+        ${!isPro
+          ? `<p style="color:#555"><strong>Client :</strong> ${clientName}<br/><strong>Email :</strong> ${clientEmail}</p>`
+          : ''}
         <table style="width:100%;border-collapse:collapse;margin:16px 0">
           <thead><tr>${tableHeaders}</tr></thead>
           <tbody>${itemsHtml}</tbody>
           ${showTotal && !isPro ? `
           <tfoot>
             <tr>
-              <td colspan="${isPro ? 1 : 3}" style="padding:10px 12px;text-align:right;font-weight:900;background:#E31E24;color:white">TOTAL TTC</td>
+              <td colspan="3" style="padding:10px 12px;text-align:right;font-weight:900;background:#E31E24;color:white">TOTAL TTC</td>
               <td style="padding:10px 12px;text-align:right;font-weight:900;background:#E31E24;color:white">${orderTotal.toFixed(2)} €</td>
             </tr>
           </tfoot>` : ''}
@@ -76,28 +85,28 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const sends = [];
 
     // ── Email to admin ─────────────────────────────────────────────────────
-    sends.push(resend.emails.send({
-      from: 'Express Food <onboarding@resend.dev>',
-      to: adminEmail,
+    sends.push(client.sendTransacEmail({
+      sender: { name: senderName, email: senderEmail },
+      to: [{ email: adminEmail }],
       subject: `🛒 Nouvelle commande #EF-${orderRef} — ${isPro ? proClientName : clientName}`,
-      html: emailHtml('Admin', true),
+      htmlContent: emailHtml('Admin', true),
     }));
 
     // ── Email to client ────────────────────────────────────────────────────
-    const clientEmailAddress = isPro ? proClientEmail.trim() : clientEmail.trim();
+    const clientEmailAddress = isPro ? proClientEmail?.trim() : clientEmail?.trim();
     if (clientEmailAddress) {
-      sends.push(resend.emails.send({
-        from: 'Express Food <onboarding@resend.dev>',
-        to: clientEmailAddress,
+      sends.push(client.sendTransacEmail({
+        sender: { name: senderName, email: senderEmail },
+        to: [{ email: clientEmailAddress }],
         subject: `✅ Votre commande Express Food #EF-${orderRef} est confirmée`,
-        html: emailHtml(isPro ? proClientName : clientName, !isPro),
+        htmlContent: emailHtml(isPro ? proClientName : clientName, !isPro),
       }));
     }
 
     await Promise.all(sends);
     return res.status(200).json({ ok: true });
   } catch (err: any) {
-    console.error('[Resend] error:', err);
+    console.error('[Brevo] error:', err);
     return res.status(500).json({ error: 'Email error', detail: err?.message });
   }
 }
