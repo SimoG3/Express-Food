@@ -5,7 +5,6 @@ import CheckoutModal     from './components/CheckoutModal';
 import ProLoginModal     from './components/ProLoginModal';
 import ProWelcomeBanner  from './components/ProWelcomeBanner';
 import Footer            from './components/Footer';
-import NewsletterSection from './components/NewsletterSection';
 import HomePage          from './pages/HomePage';
 import ProductsPage      from './pages/ProductsPage';
 import AdminLogin        from './pages/AdminLogin';
@@ -40,7 +39,6 @@ function AppContent() {
       </main>
 
       {/* ── Footer ─────────────────────────────────────────────────── */}
-      <NewsletterSection />
       <Footer />
     </div>
   );

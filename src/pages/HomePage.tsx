@@ -3,7 +3,6 @@ import { Tag, Sparkles, Star, TrendingUp, Zap } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { PRODUCT_CATEGORIES, CAT_ICON, COLOR, BRAND_NAME } from '../data/constants';
 import ProductCard  from '../components/ProductCard';
-import TrustBanner  from '../components/TrustBanner';
 import type { Product } from '../types';
 
 // ── Reusable section heading ──────────────────────────────────────────────────
@@ -98,7 +97,7 @@ function ProSection({
 
 // ── Main page ─────────────────────────────────────────────────────────────────
 export default function HomePage() {
-  const { products, navigate, activeProClient } = useApp();
+  const { products, navigate, activeProClient, submitSearch } = useApp();
 
   // Catalogues
   const promos      = useMemo(() =>
@@ -152,11 +151,6 @@ export default function HomePage() {
           <div className="text-white max-w-lg">
 
             {/* Badge */}
-            <div className="text-xs font-black mb-3 px-3 py-1 inline-flex items-center gap-1.5 rounded-sm tracking-wide"
-              style={{ background: COLOR.red }}>
-              <Zap size={12} /> LIVRAISON EN 30 MIN
-            </div>
-
             <h1 className="text-3xl md:text-4xl font-black leading-tight mb-3">
               Vos courses livrées
               <br />
@@ -191,14 +185,11 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* ── Trust banner ───────────────────────────────────────────────── */}
-      <TrustBanner />
-
       {/* ── Category quick links ───────────────────────────────────────── */}
       <div className="max-w-7xl mx-auto px-4 py-6">
         <div className="grid grid-cols-4 md:grid-cols-9 gap-2">
           {PRODUCT_CATEGORIES.map(cat => (
-            <button key={cat} onClick={() => navigate('products')}
+            <button key={cat} onClick={() => { submitSearch(cat); }}
               className="bg-white border rounded-sm p-3 flex flex-col items-center gap-1.5 hover:shadow-sm"
               style={{ borderColor: COLOR.border }}>
               <span className="text-2xl" aria-hidden="true">{CAT_ICON[cat]}</span>
@@ -272,29 +263,6 @@ export default function HomePage() {
           </div>
         </section>
       ))}
-
-      {/* ── Bottom CTA strip ───────────────────────────────────────────── */}
-      <div className="max-w-7xl mx-auto px-4 pb-8">
-        <div className="rounded-sm overflow-hidden flex flex-col md:flex-row"
-          style={{ background: COLOR.dark }}>
-          <div className="flex-1 p-6 text-white">
-            <div className="text-xs font-black mb-2 px-2 py-0.5 inline-block rounded-sm"
-              style={{ background: COLOR.red }}>NOUVEAU CLIENT</div>
-            <h3 className="font-black text-xl mb-1">
-              -10 € sur votre <span style={{ color: COLOR.red }}>première commande</span>
-            </h3>
-            <p className="text-gray-400 text-sm">Inscrivez-vous à notre newsletter et recevez votre coupon.</p>
-          </div>
-          <div className="flex items-center px-6 py-4 border-t md:border-t-0 md:border-l"
-            style={{ borderColor: 'rgba(255,255,255,.08)' }}>
-            <button onClick={() => navigate('products')}
-              className="text-white font-black px-6 py-2.5 rounded-sm text-sm whitespace-nowrap"
-              style={{ background: COLOR.green }}>
-              Commander maintenant →
-            </button>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }
