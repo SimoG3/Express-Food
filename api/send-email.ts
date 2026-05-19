@@ -77,17 +77,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // ── Email to admin ─────────────────────────────────────────────────────
     sends.push(resend.emails.send({
-      from: 'Express Food <simogcloud@gmail.com>',
+      from: 'Express Food <onboarding@resend.dev>',
       to: adminEmail,
       subject: `🛒 Nouvelle commande #EF-${orderRef} — ${isPro ? proClientName : clientName}`,
       html: emailHtml('Admin', true),
     }));
 
     // ── Email to client ────────────────────────────────────────────────────
-    const clientEmailAddress = isPro ? proClientEmail : clientEmail;
+    const clientEmailAddress = isPro ? proClientEmail.trim() : clientEmail.trim();
     if (clientEmailAddress) {
       sends.push(resend.emails.send({
-        from: 'Express Food <simogcloud@gmail.com>',
+        from: 'Express Food <onboarding@resend.dev>',
         to: clientEmailAddress,
         subject: `✅ Votre commande Express Food #EF-${orderRef} est confirmée`,
         html: emailHtml(isPro ? proClientName : clientName, !isPro),
