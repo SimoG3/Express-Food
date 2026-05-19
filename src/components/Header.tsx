@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
-import { ShoppingCart, Search, ChevronDown, Menu, X, Building2 } from 'lucide-react';
+import { ShoppingCart, Search, Menu, X, Building2 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import { COLOR, PRODUCT_CATEGORIES, CAT_ICON, DRIVE_STORES } from '../data/constants';
+import { COLOR, PRODUCT_CATEGORIES, CAT_ICON } from '../data/constants';
 import Logo from './Logo';
 
 export default function Header() {
@@ -9,20 +9,9 @@ export default function Header() {
           setProLoginOpen, activeProClient } = useApp();
 
   const [localSearch, setLocalSearch] = useState(searchQuery);
-  const [zone,        setZone]        = useState(DRIVE_STORES[0]);
-  const [zoneOpen,    setZoneOpen]    = useState(false);
   const [mobileOpen,  setMobileOpen]  = useState(false);
-  const zoneRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => { setLocalSearch(searchQuery); }, [searchQuery]);
-
-  useEffect(() => {
-    const h = (e: MouseEvent) => {
-      if (zoneRef.current && !zoneRef.current.contains(e.target as Node)) setZoneOpen(false);
-    };
-    document.addEventListener('mousedown', h);
-    return () => document.removeEventListener('mousedown', h);
-  }, []);
 
   const handleSearch = () => { if (localSearch.trim()) submitSearch(localSearch.trim()); };
   const clearSearch  = () => { setLocalSearch(''); submitSearch(''); };
@@ -35,7 +24,7 @@ export default function Header() {
         className="text-gray-400 py-1 px-4 text-center hidden sm:block">
         🚗&nbsp;
         <span style={{ color: COLOR.red }}>Livraison Express</span>
-        &nbsp;·&nbsp;Commande avant 14h → livrée le jour même&nbsp;·&nbsp;
+        &nbsp;·&nbsp;
         <span style={{ color: COLOR.green }}>Fraîcheur garantie</span>
       </div>
 
@@ -46,31 +35,6 @@ export default function Header() {
         <button onClick={() => navigate('home')} aria-label="Accueil" className="flex-shrink-0">
           <Logo size={38} />
         </button>
-
-        {/* Zone selector */}
-        <div ref={zoneRef} className="relative hidden md:block flex-shrink-0">
-          <button
-            onClick={() => setZoneOpen(v => !v)}
-            className="flex items-center gap-2 text-gray-300 text-xs border px-3 py-2 rounded-sm"
-            style={{ background: 'rgba(255,255,255,.07)', borderColor: 'rgba(255,255,255,.15)' }}
-          >
-            <span>📍</span>
-            <span className="font-medium max-w-36 truncate">{zone}</span>
-            <ChevronDown size={12} />
-          </button>
-          {zoneOpen && (
-            <div className="absolute top-full left-0 mt-1 bg-white border shadow-2xl z-50 w-52 rounded-sm"
-              style={{ borderColor: COLOR.border }}>
-              {DRIVE_STORES.map(s => (
-                <button key={s} onClick={() => { setZone(s); setZoneOpen(false); }}
-                  className="block w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 border-b last:border-0"
-                  style={{ borderColor: '#f0f0f0' }}>
-                  📍 {s}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
 
         {/* ── Search bar ─────────────────────────────────────────────── */}
         <div className="flex-1 flex min-w-0">
@@ -138,11 +102,6 @@ export default function Header() {
       {mobileOpen && (
         <div className="md:hidden px-4 pb-3 flex flex-col gap-2"
           style={{ background: COLOR.dark, borderTop: '1px solid rgba(255,255,255,.08)' }}>
-          <select value={zone} onChange={e => setZone(e.target.value)}
-            className="w-full text-sm px-3 py-2 rounded-sm text-white border-0"
-            style={{ background: 'rgba(255,255,255,.12)' }}>
-            {DRIVE_STORES.map(s => <option key={s} style={{ color: '#111' }}>{s}</option>)}
-          </select>
           <button onClick={() => { setProLoginOpen(true); setMobileOpen(false); }}
             className="flex items-center justify-center gap-2 text-white text-sm font-bold py-2.5 rounded-sm"
             style={{ background: activeProClient ? COLOR.green : 'rgba(255,255,255,.12)' }}>
