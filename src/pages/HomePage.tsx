@@ -160,7 +160,6 @@ export default function HomePage() {
 
             <p className="text-gray-400 text-sm mb-6 leading-relaxed">
               <span style={{ color: COLOR.green }}>Fraîcheur garantie</span> · Produits frais sélectionnés
-              <br />Commandez avant 14h → livré aujourd'hui
             </p>
 
             <div className="flex gap-3 flex-wrap">

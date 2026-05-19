@@ -2,7 +2,6 @@ import { Zap, Truck, ShieldCheck, Leaf } from 'lucide-react';
 import { COLOR } from '../data/constants';
 
 const ITEMS = [
-  { icon: Zap,         title: 'Livraison Express',    subtitle: 'En 30 à 60 min',     detail: 'Commandez avant 14h, livré aujourd\'hui', accent: COLOR.red   },
   { icon: Truck,       title: 'Livraison à domicile', subtitle: 'Dès 2.99 €',          detail: 'Livraison standard sous 24–48h',           accent: COLOR.green },
   { icon: ShieldCheck, title: 'Paiement sécurisé',    subtitle: '3D Secure & SSL',     detail: 'Toutes cartes bancaires acceptées',         accent: COLOR.red   },
   { icon: Leaf,        title: 'Fraîcheur garantie',   subtitle: '100 % frais',          detail: 'Remboursé si non satisfait',               accent: COLOR.green },
