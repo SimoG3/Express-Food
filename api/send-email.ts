@@ -88,7 +88,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     sends.push(client.sendTransacEmail({
       sender: { name: senderName, email: senderEmail },
       to: [{ email: adminEmail }],
-      subject: `🛒 Nouvelle commande #EF-${orderRef} — ${isPro ? proClientName : clientName}`,
+      subject: `${isPro ? proClientName : clientName} — 🛒 Nouvelle commande #EF-${orderRef}`,
       htmlContent: emailHtml('Admin', true),
     }));
 
