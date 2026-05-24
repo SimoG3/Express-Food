@@ -17,7 +17,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   if (req.method === 'POST') {
     const { value } = req.body;
-    await redis.set(key, value);
+    await redis.set(key, JSON.stringify(value));
     return res.status(200).json({ ok: true });
   }
 

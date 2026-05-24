@@ -15,9 +15,13 @@ async function kvGet<T>(key: string, fallback: T): Promise<T> {
   try {
     const res = await fetch(`/api/store?key=${key}`);
     if (!res.ok) return fallback;
-    const data = await res.json();
-    return data ?? fallback;
-  } catch { return fallback; }
+    const raw = await res.json();
+    if (raw === null) return fallback;
+    return typeof raw === 'string' ? JSON.parse(raw) : raw;
+  } catch (e) {
+    console.error('KV read failed:', e);
+    return fallback;
+  }
 }
 
 async function kvSet(key: string, value: unknown): Promise<void> {
