@@ -9,6 +9,7 @@ import SafeImage from '../components/SafeImage';
 import { COLOR, PRODUCT_CATEGORIES, ALL_CATEGORIES, BRAND_NAME } from '../data/constants';
 import { LogoLight } from '../components/Logo';
 import type { Product, ProClient, ProductFormState, ImageInputMode } from '../types';
+import { uploadImage } from '../utils/uploadImage';
 
 // ── Shared toggle ──────────────────────────────────────────────────────────────
 function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
@@ -101,12 +102,26 @@ function ProductsTab() {
     if (window.confirm('Supprimer définitivement ?')) deleteProduct(id);
   };
 
-  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const [uploadError,    setUploadError]    = useState('');
+  const [uploadLoading,  setUploadLoading]  = useState(false);
+
+  const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const r = new FileReader();
-    r.onload = ev => set('image', ev.target?.result as string);
-    r.readAsDataURL(file);
+
+    setUploadError('');
+    setUploadLoading(true);
+
+    try {
+      const url = await uploadImage(file);
+      set('image', url);
+    } catch (err: any) {
+      setUploadError(err.message);
+    } finally {
+      setUploadLoading(false);
+      // Reset input so same file can be re-selected
+      if (fileRef.current) fileRef.current.value = '';
+    }
   };
 
   if (view === 'form') return (
@@ -128,21 +143,22 @@ function ProductsTab() {
                 </button>
               ))}
             </div>
-            {imgMode === 'url' ? (
-              <input type="text" value={form.image} onChange={e => set('image', e.target.value)}
-                placeholder="https://images.unsplash.com/…"
-                className="w-full border px-3 py-2 text-sm rounded-sm focus:outline-none"
-                style={{ borderColor: '#e5e5e5' }} />
-            ) : (
+            {imgMode === 'upload' && (
               <div>
                 <input ref={fileRef} type="file" accept="image/*" onChange={handleFile} className="hidden" />
-                <button onClick={() => fileRef.current?.click()}
+                <button
+                  onClick={() => fileRef.current?.click()}
+                  disabled={uploadLoading}
                   className="flex items-center justify-center gap-2 border px-4 py-3 text-sm rounded-sm w-full"
-                  style={{ borderColor: '#e5e5e5', borderStyle: 'dashed' }}>
-                  <Upload size={15} style={{ color: COLOR.red }} /> Choisir une image
+                  style={{ borderColor: '#e5e5e5', borderStyle: 'dashed', opacity: uploadLoading ? 0.6 : 1 }}>
+                  <Upload size={15} style={{ color: COLOR.red }} />
+                  {uploadLoading ? 'Envoi en cours…' : 'Choisir une image (max 500KB)'}
                 </button>
-                {form.image?.startsWith('data:') && (
-                  <p className="text-xs mt-1" style={{ color: COLOR.green }}>✓ Image chargée</p>
+                {uploadError && (
+                  <p className="text-red-500 text-xs mt-1">{uploadError}</p>
+                )}
+                {form.image && !form.image.startsWith('data:') && (
+                  <p className="text-xs mt-1" style={{ color: COLOR.green }}>✓ Image uploadée sur Vercel Blob</p>
                 )}
               </div>
             )}
