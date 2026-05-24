@@ -143,7 +143,16 @@ function ProductsTab() {
                 </button>
               ))}
             </div>
-            {imgMode === 'upload' && (
+            {imgMode === 'url' ? (
+              <input
+                type="text"
+                value={form.image}
+                onChange={e => set('image', e.target.value)}
+                placeholder="https://images.unsplash.com/…"
+                className="w-full border px-3 py-2 text-sm rounded-sm focus:outline-none"
+                style={{ borderColor: '#e5e5e5' }}
+              />
+            ) : (
               <div>
                 <input ref={fileRef} type="file" accept="image/*" onChange={handleFile} className="hidden" />
                 <button
@@ -158,7 +167,7 @@ function ProductsTab() {
                   <p className="text-red-500 text-xs mt-1">{uploadError}</p>
                 )}
                 {form.image && !form.image.startsWith('data:') && (
-                  <p className="text-xs mt-1" style={{ color: COLOR.green }}>✓ Image uploadée sur Vercel Blob</p>
+                  <p className="text-xs mt-1" style={{ color: COLOR.green }}>✓ Image uploadée</p>
                 )}
               </div>
             )}
