@@ -18,6 +18,7 @@ export interface Product {
   discount?:    number;   // percentage e.g. 15 = 15% off
   isNew?:       boolean;
   featured?:    boolean;
+  sortOrder?: number; // lower = higher priority, undefined = no priority set
   tags?:        string[];
   createdAt?:   string;   // ISO date
 }

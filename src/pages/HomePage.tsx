@@ -137,7 +137,10 @@ export default function HomePage() {
   const catSections = useMemo(() =>
     PRODUCT_CATEGORIES.map(cat => ({
       cat,
-      items: products.filter(p => p.category === cat && p.inStock).slice(0, 5),
+      items: products
+        .filter(p => p.category === cat && p.inStock)
+        .sort((a, b) => (a.sortOrder ?? 99999) - (b.sortOrder ?? 99999))
+        .slice(0, 5),
     })).filter(s => s.items.length > 0),
     [products],
   );

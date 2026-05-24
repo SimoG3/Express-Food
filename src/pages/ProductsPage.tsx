@@ -39,6 +39,9 @@ export default function ProductsPage() {
         (p.tags ?? []).some(t => t.toLowerCase().includes(q))
       );
 
+    if (sort === 'default') {
+      list = [...list].sort((a, b) => (a.sortOrder ?? 99999) - (b.sortOrder ?? 99999));
+    }
     if (sort === 'price-asc')  list = [...list].sort((a, b) => a.price - b.price);
     if (sort === 'price-desc') list = [...list].sort((a, b) => b.price - a.price);
     if (sort === 'name')       list = [...list].sort((a, b) => a.name.localeCompare(b.name));
