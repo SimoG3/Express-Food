@@ -26,11 +26,15 @@ function initialPage(): PageKey {
   return 'home';
 }
 
-// ── 6-digit code generator ────────────────────────────────────────────────────
-function gen6DigitCode(existing: string[]): string {
+// ── alphanumerical code generator ────────────────────────────────────────────────────
+const ALPHANUM = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no 0/O/1/I to avoid confusion
+function genAccessCode(existing: string[]): string {
   let code: string;
-  do { code = String(Math.floor(100000 + Math.random() * 900000)); }
-  while (existing.includes(code));
+  do {
+    code = Array.from({ length: 8 }, () =>
+      ALPHANUM[Math.floor(Math.random() * ALPHANUM.length)]
+    ).join('');
+  } while (existing.includes(code));
   return code;
 }
 
@@ -174,7 +178,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       name,
       company,
       email,
-      accessCode: gen6DigitCode(existing),
+      accessCode: genAccessCode(existing),
       priceOverrides: {},
       purchaseHistory: [],
       createdAt: new Date().toISOString().split('T')[0],

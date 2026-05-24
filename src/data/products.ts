@@ -633,12 +633,12 @@ export const SEED_PRODUCTS: Product[] = [
 export const SEED_PRO_CLIENTS: ProClient[] = [
   {
     id:'pc1', name:'Restaurant Le Marrakchi', company:'SARL Le Marrakchi',
-    accessCode:'123456', createdAt:'2024-09-01', purchaseHistory:[],
+    accessCode:'MK3X9R2A', createdAt:'2024-09-01', purchaseHistory:[],
     priceOverrides:{},
   },
   {
     id:'pc2', name:'Hôtel Atlas Asni', company:'Atlas Hospitality Group',
-    accessCode:'654321', createdAt:'2024-09-15', purchaseHistory:[],
+    accessCode:'HT7B4NQ6', createdAt:'2024-09-15', purchaseHistory:[],
     priceOverrides:{},
   },
 ];

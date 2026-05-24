@@ -76,6 +76,7 @@ src/pages/ProductsPage.tsx
 src/types/index.ts
 src/utils/pdfGenerator.ts
 src/utils/webhookService.ts
+src/vite-env.d.ts
 tailwind.config.js
 tsconfig.json
 tsconfig.node.json
@@ -86,109 +87,15 @@ vite.config.ts
 <files>
 This section contains the contents of the repository's files.
 
-<file path="api/send-email.ts">
-import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { Resend } from 'resend';
+<file path="src/vite-env.d.ts">
+/// <reference types="vite/client" />
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+interface ImportMetaEnv {
+  readonly VITE_ADMIN_PASSWORD: string;
+}
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (req.method !== 'POST') return res.status(405).end();
-
-  const {
-    isPro,
-    clientName,
-    clientEmail,
-    proClientName,
-    proClientEmail,
-    orderRef,
-    items,
-    orderTotal,
-  } = req.body;
-
-  const adminEmail = isPro
-    ? process.env.ADMIN_PRO_EMAIL!
-    : process.env.ADMIN_NORMAL_EMAIL!;
-
-  const itemsHtml = items.map((i: any) =>
-    `<tr>
-      <td style="padding:6px 12px;border-bottom:1px solid #f0f0f0">${i.name}</td>
-      <td style="padding:6px 12px;border-bottom:1px solid #f0f0f0;text-align:center">${i.quantity}</td>
-      ${!isPro ? `<td style="padding:6px 12px;border-bottom:1px solid #f0f0f0;text-align:right">${i.unitPrice.toFixed(2)} €</td>
-      <td style="padding:6px 12px;border-bottom:1px solid #f0f0f0;text-align:right">${i.total.toFixed(2)} €</td>` : ''}
-    </tr>`
-  ).join('');
-
-  const tableHeaders = isPro
-    ? `<th style="text-align:left;padding:8px 12px;background:#111;color:white">Article</th>
-       <th style="text-align:center;padding:8px 12px;background:#111;color:white">Qté</th>`
-    : `<th style="text-align:left;padding:8px 12px;background:#111;color:white">Article</th>
-       <th style="text-align:center;padding:8px 12px;background:#111;color:white">Qté</th>
-       <th style="text-align:right;padding:8px 12px;background:#111;color:white">Prix unit.</th>
-       <th style="text-align:right;padding:8px 12px;background:#111;color:white">Total</th>`;
-
-  const emailHtml = (recipientName: string, showTotal: boolean) => `
-    <div style="font-family:sans-serif;max-width:600px;margin:0 auto">
-      <div style="background:#111;padding:24px;text-align:center">
-        <span style="color:#E31E24;font-weight:900;font-size:22px">EXPRESS </span>
-        <span style="color:#2D8A2D;font-weight:900;font-size:22px">FOOD</span>
-      </div>
-      <div style="background:#E31E24;height:4px"></div>
-      <div style="padding:24px;background:#fff">
-        <h2 style="color:#111;margin-top:0">Nouvelle commande #EF-${orderRef}</h2>
-        <p style="color:#555">Bonjour ${recipientName},</p>
-        <p style="color:#555">
-          ${isPro
-            ? `Une nouvelle commande a été passée par le compte Pro <strong>${proClientName}</strong>.`
-            : `Une nouvelle commande a été reçue de <strong>${clientName}</strong>.`}
-        </p>
-        ${!isPro ? `<p style="color:#555"><strong>Client :</strong> ${clientName}<br/><strong>Email :</strong> ${clientEmail}</p>` : ''}
-        <table style="width:100%;border-collapse:collapse;margin:16px 0">
-          <thead><tr>${tableHeaders}</tr></thead>
-          <tbody>${itemsHtml}</tbody>
-          ${showTotal && !isPro ? `
-          <tfoot>
-            <tr>
-              <td colspan="${isPro ? 1 : 3}" style="padding:10px 12px;text-align:right;font-weight:900;background:#E31E24;color:white">TOTAL TTC</td>
-              <td style="padding:10px 12px;text-align:right;font-weight:900;background:#E31E24;color:white">${orderTotal.toFixed(2)} €</td>
-            </tr>
-          </tfoot>` : ''}
-        </table>
-      </div>
-      <div style="background:#f6f6f6;padding:16px;text-align:center;color:#999;font-size:12px">
-        Express Food · contact@expressfood.ma
-      </div>
-    </div>
-  `;
-
-  try {
-    const sends = [];
-
-    // ── Email to admin ─────────────────────────────────────────────────────
-    sends.push(resend.emails.send({
-      from: 'Express Food <orders@yourdomain.com>',
-      to: adminEmail,
-      subject: `🛒 Nouvelle commande #EF-${orderRef} — ${isPro ? proClientName : clientName}`,
-      html: emailHtml('Admin', true),
-    }));
-
-    // ── Email to client ────────────────────────────────────────────────────
-    const clientEmailAddress = isPro ? proClientEmail : clientEmail;
-    if (clientEmailAddress) {
-      sends.push(resend.emails.send({
-        from: 'Express Food <orders@yourdomain.com>',
-        to: clientEmailAddress,
-        subject: `✅ Votre commande Express Food #EF-${orderRef} est confirmée`,
-        html: emailHtml(isPro ? proClientName : clientName, !isPro),
-      }));
-    }
-
-    await Promise.all(sends);
-    return res.status(200).json({ ok: true });
-  } catch (err: any) {
-    console.error('[Resend] error:', err);
-    return res.status(500).json({ error: 'Email error', detail: err?.message });
-  }
+interface ImportMeta {
+  readonly env: ImportMetaEnv;
 }
 </file>
 
@@ -197,46 +104,6 @@ Host github.com
   Hostname ssh.github.com
   Port 443
   User git
-</file>
-
-<file path="api/notify-multipart.ts">
-import type { VercelRequest, VercelResponse } from '@vercel/node';
-
-export const config = { api: { bodyParser: false } };
-
-export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (req.method !== 'POST') return res.status(405).end();
-
-  try {
-    const chunks: Buffer[] = [];
-    for await (const chunk of req as any) {
-      chunks.push(typeof chunk === 'string' ? Buffer.from(chunk) : chunk);
-    }
-    const body = Buffer.concat(chunks);
-    const contentType = (req.headers['content-type'] as string) ?? 'multipart/form-data';
-
-    // ── Pick webhook based on client type ──────────────────────────────────
-    const isPro = req.headers['x-is-pro'] === 'true';
-    const webhookUrl = isPro
-      ? process.env.DISCORD_WEBHOOK_PRO!
-      : process.env.DISCORD_WEBHOOK_URL!;
-
-    const response = await fetch(webhookUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': contentType },
-      body,
-    });
-
-    if (!response.ok) {
-      const text = await response.text().catch(() => '');
-      return res.status(response.status).json({ error: 'Discord error', detail: text });
-    }
-
-    return res.status(200).json({ ok: true });
-  } catch (err: any) {
-    return res.status(500).json({ error: 'Internal error', detail: err?.message });
-  }
-}
 </file>
 
 <file path="api/notify.ts">
@@ -264,24 +131,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(500).json({ error: 'Internal error' });
   }
 }
-</file>
-
-<file path="index.html">
-<!doctype html>
-<html lang="fr">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Express Food — Livraison Express à domicile</title>
-    <meta name="description" content="Express Food : livraison express de courses fraîches à domicile. Fraîcheur garantie, livraison en 30 min."/>
-    <meta name="theme-color" content="#E31E24"/>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
-</html>
 </file>
 
 <file path="postcss.config.js">
@@ -339,9 +188,8 @@ npm run build   # production bundle → dist/
 
 | Key | Default | Purpose |
 |---|---|---|
-| `WHATSAPP_ADMIN` | `33745461870` | WhatsApp number for order alerts |
-| `SHOPIFY_STORE`  | `your-store-name` | Shopify sub-domain |
-| `ADMIN_PASSWORD` | `ENSA_Grocery2024!` | Admin dashboard password |
+| `SHOPIFY_STORE`  | `Express-Food` | Shopify sub-domain |
+| `ADMIN_PASSWORD` | `D2L1AV2G1A7!2_846!` | Admin dashboard password |
 
 Change the WhatsApp number → **`+33 7 45 46 18 70`** is pre-configured.
 
@@ -426,65 +274,6 @@ After PDF download, a pre-filled WhatsApp message opens to **+33 7 45 46 18 70**
 localStorage.clear();
 location.reload();
 ```
-</file>
-
-<file path="src/App.tsx">
-import { AppProvider, useApp } from './context/AppContext';
-import Header            from './components/Header';
-import CartSidebar       from './components/CartSidebar';
-import CheckoutModal     from './components/CheckoutModal';
-import ProLoginModal     from './components/ProLoginModal';
-import ProWelcomeBanner  from './components/ProWelcomeBanner';
-import Footer            from './components/Footer';
-import NewsletterSection from './components/NewsletterSection';
-import HomePage          from './pages/HomePage';
-import ProductsPage      from './pages/ProductsPage';
-import AdminLogin        from './pages/AdminLogin';
-import AdminDashboard    from './pages/AdminDashboard';
-
-// ── Inner shell (needs context access) ───────────────────────────────────────
-function AppContent() {
-  const { page, adminAuth } = useApp();
-
-  // Admin is a completely standalone route — no shared layout
-  if (page === 'admin') {
-    return adminAuth ? <AdminDashboard /> : <AdminLogin />;
-  }
-
-  return (
-    <div className="min-h-screen flex flex-col">
-      {/* ── Global modals / drawers (always mounted) ───────────────── */}
-      <ProLoginModal />
-      <CheckoutModal />
-      <CartSidebar />
-
-      {/* ── Pro client welcome banner (renders only when logged in) ─── */}
-      <ProWelcomeBanner />
-
-      {/* ── Sticky site header ─────────────────────────────────────── */}
-      <Header />
-
-      {/* ── Page content ───────────────────────────────────────────── */}
-      <main className="flex-1">
-        {page === 'home'     && <HomePage />}
-        {page === 'products' && <ProductsPage />}
-      </main>
-
-      {/* ── Footer ─────────────────────────────────────────────────── */}
-      <NewsletterSection />
-      <Footer />
-    </div>
-  );
-}
-
-// ── Root ─────────────────────────────────────────────────────────────────────
-export default function App() {
-  return (
-    <AppProvider>
-      <AppContent />
-    </AppProvider>
-  );
-}
 </file>
 
 <file path="src/components/FilterSidebar.tsx">
@@ -722,185 +511,6 @@ export default function FilterSidebar({
 }
 </file>
 
-<file path="src/components/Header.tsx">
-import { useState, useRef, useEffect } from 'react';
-import { ShoppingCart, Search, ChevronDown, Menu, X, Building2 } from 'lucide-react';
-import { useApp } from '../context/AppContext';
-import { COLOR, PRODUCT_CATEGORIES, CAT_ICON, DRIVE_STORES } from '../data/constants';
-import Logo from './Logo';
-
-export default function Header() {
-  const { cartCount, setCartOpen, navigate, submitSearch, searchQuery,
-          setProLoginOpen, activeProClient } = useApp();
-
-  const [localSearch, setLocalSearch] = useState(searchQuery);
-  const [zone,        setZone]        = useState(DRIVE_STORES[0]);
-  const [zoneOpen,    setZoneOpen]    = useState(false);
-  const [mobileOpen,  setMobileOpen]  = useState(false);
-  const zoneRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => { setLocalSearch(searchQuery); }, [searchQuery]);
-
-  useEffect(() => {
-    const h = (e: MouseEvent) => {
-      if (zoneRef.current && !zoneRef.current.contains(e.target as Node)) setZoneOpen(false);
-    };
-    document.addEventListener('mousedown', h);
-    return () => document.removeEventListener('mousedown', h);
-  }, []);
-
-  const handleSearch = () => { if (localSearch.trim()) submitSearch(localSearch.trim()); };
-  const clearSearch  = () => { setLocalSearch(''); submitSearch(''); };
-
-  return (
-    <header style={{ background: COLOR.dark }} className="sticky top-0 z-30">
-
-      {/* ── Announcement ───────────────────────────────────────────── */}
-      <div style={{ background: COLOR.darkBg, fontSize: '11px' }}
-        className="text-gray-400 py-1 px-4 text-center hidden sm:block">
-        🚗&nbsp;
-        <span style={{ color: COLOR.red }}>Livraison Express</span>
-        &nbsp;·&nbsp;Commande avant 14h → livrée le jour même&nbsp;·&nbsp;
-        <span style={{ color: COLOR.green }}>Fraîcheur garantie</span>
-      </div>
-
-      {/* ── Main row ─────────────────────────────────────────────────── */}
-      <div className="max-w-7xl mx-auto px-4 py-3 flex items-center gap-3">
-
-        {/* Logo */}
-        <button onClick={() => navigate('home')} aria-label="Accueil" className="flex-shrink-0">
-          <Logo size={38} />
-        </button>
-
-        {/* Zone selector */}
-        <div ref={zoneRef} className="relative hidden md:block flex-shrink-0">
-          <button
-            onClick={() => setZoneOpen(v => !v)}
-            className="flex items-center gap-2 text-gray-300 text-xs border px-3 py-2 rounded-sm"
-            style={{ background: 'rgba(255,255,255,.07)', borderColor: 'rgba(255,255,255,.15)' }}
-          >
-            <span>📍</span>
-            <span className="font-medium max-w-36 truncate">{zone}</span>
-            <ChevronDown size={12} />
-          </button>
-          {zoneOpen && (
-            <div className="absolute top-full left-0 mt-1 bg-white border shadow-2xl z-50 w-52 rounded-sm"
-              style={{ borderColor: COLOR.border }}>
-              {DRIVE_STORES.map(s => (
-                <button key={s} onClick={() => { setZone(s); setZoneOpen(false); }}
-                  className="block w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 border-b last:border-0"
-                  style={{ borderColor: '#f0f0f0' }}>
-                  📍 {s}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* ── Search bar ─────────────────────────────────────────────── */}
-        <div className="flex-1 flex min-w-0">
-          <input
-            type="text"
-            value={localSearch}
-            onChange={e => setLocalSearch(e.target.value)}
-            onKeyDown={e => { if (e.key === 'Enter') handleSearch(); if (e.key === 'Escape') clearSearch(); }}
-            placeholder="Rechercher un produit, une catégorie…"
-            className="flex-1 min-w-0 pl-4 pr-3 py-2.5 text-sm rounded-l-sm focus:outline-none border-0"
-            style={{ color: '#111', background: 'white' }}
-          />
-          {localSearch && (
-            <button onClick={clearSearch}
-              className="px-2 py-2.5 bg-white text-gray-400 hover:text-gray-600 border-l"
-              style={{ borderColor: '#e5e5e5' }}>
-              <X size={14} />
-            </button>
-          )}
-          <button onClick={handleSearch}
-            className="flex-shrink-0 px-4 py-2.5 rounded-r-sm font-bold text-white text-sm"
-            style={{ background: COLOR.red }}>
-            <Search size={17} />
-          </button>
-        </div>
-
-        {/* Pro Access */}
-        <button
-          onClick={() => setProLoginOpen(true)}
-          className="hidden md:flex items-center gap-1.5 text-xs font-bold px-3 py-2 rounded-sm border flex-shrink-0"
-          style={{
-            background:  activeProClient ? COLOR.green : 'rgba(255,255,255,.08)',
-            borderColor: activeProClient ? COLOR.green  : 'rgba(255,255,255,.15)',
-            color:       'white',
-          }}
-          title={activeProClient ? activeProClient.name : 'Accès Professionnel'}
-        >
-          <Building2 size={14} />
-          <span className="hidden lg:inline">{activeProClient ? '★ Espace Pro' : 'Accès Pro'}</span>
-        </button>
-
-        {/* Cart */}
-        <button onClick={() => setCartOpen(true)}
-          className="flex items-center gap-2 text-white flex-shrink-0 relative"
-          aria-label="Panier">
-          <div className="relative">
-            <ShoppingCart size={24} />
-            {cartCount > 0 && (
-              <span className="absolute -top-2 -right-2 rounded-full w-5 h-5 text-white font-black flex items-center justify-center"
-                style={{ background: COLOR.red, fontSize: '10px' }}>
-                {cartCount > 99 ? '99+' : cartCount}
-              </span>
-            )}
-          </div>
-          <span className="hidden sm:block text-sm font-semibold">Panier</span>
-        </button>
-
-        {/* Mobile toggle */}
-        <button onClick={() => setMobileOpen(v => !v)} className="md:hidden text-white flex-shrink-0">
-          {mobileOpen ? <X size={22} /> : <Menu size={22} />}
-        </button>
-      </div>
-
-      {/* Mobile dropdown */}
-      {mobileOpen && (
-        <div className="md:hidden px-4 pb-3 flex flex-col gap-2"
-          style={{ background: COLOR.dark, borderTop: '1px solid rgba(255,255,255,.08)' }}>
-          <select value={zone} onChange={e => setZone(e.target.value)}
-            className="w-full text-sm px-3 py-2 rounded-sm text-white border-0"
-            style={{ background: 'rgba(255,255,255,.12)' }}>
-            {DRIVE_STORES.map(s => <option key={s} style={{ color: '#111' }}>{s}</option>)}
-          </select>
-          <button onClick={() => { setProLoginOpen(true); setMobileOpen(false); }}
-            className="flex items-center justify-center gap-2 text-white text-sm font-bold py-2.5 rounded-sm"
-            style={{ background: activeProClient ? COLOR.green : 'rgba(255,255,255,.12)' }}>
-            <Building2 size={14} />
-            {activeProClient ? `Pro : ${activeProClient.name}` : 'Accès Professionnel'}
-          </button>
-        </div>
-      )}
-
-      {/* ── Category nav ──────────────────────────────────────────────── */}
-      <nav style={{ background: COLOR.navBg, borderTop: '1px solid rgba(255,255,255,.06)' }}
-        aria-label="Catégories">
-        <div className="max-w-7xl mx-auto px-4 overflow-x-auto">
-          <div className="flex">
-            <button onClick={() => { submitSearch(''); navigate('products'); }}
-              className="flex-shrink-0 text-gray-300 text-xs font-black px-4 py-2.5 whitespace-nowrap border-r border-white border-opacity-10"
-              style={{ background: 'rgba(255,255,255,.06)' }}>
-              Tous
-            </button>
-            {PRODUCT_CATEGORIES.map(cat => (
-              <button key={cat} onClick={() => navigate('products')}
-                className="flex-shrink-0 text-gray-300 text-xs font-semibold px-4 py-2.5 whitespace-nowrap border-r border-white border-opacity-10 hover:text-white hover:bg-white hover:bg-opacity-10">
-                {CAT_ICON[cat]}&nbsp;{cat}
-              </button>
-            ))}
-          </div>
-        </div>
-      </nav>
-    </header>
-  );
-}
-</file>
-
 <file path="src/components/NewsletterSection.tsx">
 import { useState } from 'react';
 import { Mail, CheckCircle, AlertCircle } from 'lucide-react';
@@ -994,7 +604,7 @@ export default function ProLoginModal() {
   if (!proLoginOpen) return null;
 
   const handleSubmit = () => {
-    if (code.trim().length !== 6) { setError('Le code doit comporter 6 chiffres.'); return; }
+    if (code.trim().length !== 8) { setError('Le code doit comporter 8 caractères.'); return; }
     if (!loginProClient(code.trim())) {
       setError('Code invalide. Contactez votre commercial.'); setCode('');
     } else { setCode(''); setError(''); }
@@ -1061,7 +671,7 @@ export default function ProLoginModal() {
                   value={code}
                   onChange={e => { setCode(e.target.value.replace(/\D/g, '')); setError(''); }}
                   onKeyDown={e => e.key === 'Enter' && handleSubmit()}
-                  placeholder="_ _ _ _ _ _"
+                  placeholder="_ _ _ _ _ _ _ _"
                   className="w-full border px-4 py-3 text-2xl font-black tracking-widest text-center
                              rounded-sm focus:outline-none"
                   style={{ borderColor: error ? '#ef4444' : COLOR.border,
@@ -1177,43 +787,6 @@ export default function SafeImage({ fallbackText, alt, ...props }: Props) {
         if (img.src !== fallback) img.src = fallback;
       }}
     />
-  );
-}
-</file>
-
-<file path="src/components/TrustBanner.tsx">
-import { Zap, Truck, ShieldCheck, Leaf } from 'lucide-react';
-import { COLOR } from '../data/constants';
-
-const ITEMS = [
-  { icon: Zap,         title: 'Livraison Express',    subtitle: 'En 30 à 60 min',     detail: 'Commandez avant 14h, livré aujourd\'hui', accent: COLOR.red   },
-  { icon: Truck,       title: 'Livraison à domicile', subtitle: 'Dès 2.99 €',          detail: 'Livraison standard sous 24–48h',           accent: COLOR.green },
-  { icon: ShieldCheck, title: 'Paiement sécurisé',    subtitle: '3D Secure & SSL',     detail: 'Toutes cartes bancaires acceptées',         accent: COLOR.red   },
-  { icon: Leaf,        title: 'Fraîcheur garantie',   subtitle: '100 % frais',          detail: 'Remboursé si non satisfait',               accent: COLOR.green },
-] as const;
-
-export default function TrustBanner() {
-  return (
-    <section aria-label="Nos engagements" className="border-t border-b"
-      style={{ background: '#fff', borderColor: COLOR.border }}>
-      <div className="max-w-7xl mx-auto px-4">
-        <div className="grid grid-cols-2 md:grid-cols-4 divide-x" style={{ borderColor: COLOR.border }}>
-          {ITEMS.map(({ icon: Icon, title, subtitle, detail, accent }) => (
-            <div key={title} className="flex items-start gap-3 px-5 py-4">
-              <div className="flex-shrink-0 w-10 h-10 rounded-sm flex items-center justify-center mt-0.5"
-                style={{ background: accent }}>
-                <Icon size={19} className="text-white" />
-              </div>
-              <div>
-                <p className="text-sm font-black text-gray-800 leading-tight">{title}</p>
-                <p className="text-xs font-bold" style={{ color: accent }}>{subtitle}</p>
-                <p className="text-xs text-gray-400 mt-0.5 leading-tight">{detail}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
   );
 }
 </file>
@@ -1401,309 +974,6 @@ export default function AdminLogin() {
         <p className="text-center text-xs mt-4" style={{ color:'#d1d5db' }}>
           Page non référencée dans la navigation.
         </p>
-      </div>
-    </div>
-  );
-}
-</file>
-
-<file path="src/pages/HomePage.tsx">
-import { useMemo } from 'react';
-import { Tag, Sparkles, Star, TrendingUp, Zap } from 'lucide-react';
-import { useApp } from '../context/AppContext';
-import { PRODUCT_CATEGORIES, CAT_ICON, COLOR, BRAND_NAME } from '../data/constants';
-import ProductCard  from '../components/ProductCard';
-import TrustBanner  from '../components/TrustBanner';
-import type { Product } from '../types';
-
-// ── Reusable section heading ──────────────────────────────────────────────────
-function SectionHeader({
-  icon: Icon, label, sub, accent, onViewAll,
-}: {
-  icon: React.ElementType; label: string; sub?: string; accent: string; onViewAll?: () => void;
-}) {
-  return (
-    <div className="flex items-center justify-between mb-4">
-      <div className="flex items-center gap-2 pl-3 border-l-4" style={{ borderColor: accent }}>
-        <Icon size={18} style={{ color: accent }} />
-        <div>
-          <h2 className="font-black text-gray-800 text-lg leading-none">{label}</h2>
-          {sub && <p className="text-xs text-gray-400 mt-0.5">{sub}</p>}
-        </div>
-      </div>
-      {onViewAll && (
-        <button onClick={onViewAll} className="text-sm font-semibold" style={{ color: COLOR.red }}>
-          Voir tout →
-        </button>
-      )}
-    </div>
-  );
-}
-
-// ── Catalogue section with coloured header bar ────────────────────────────────
-function CatalogueSection({
-  icon: Icon, title, sub, accent, badge, items, onViewAll,
-}: {
-  icon: React.ElementType; title: string; sub: string; accent: string;
-  badge?: string; items: Product[]; onViewAll: () => void;
-}) {
-  if (items.length === 0) return null;
-  return (
-    <section className="max-w-7xl mx-auto px-4 pb-8">
-      <div className="rounded-sm overflow-hidden mb-4">
-        <div className="flex items-center justify-between px-4 py-3" style={{ background: accent }}>
-          <div className="flex items-center gap-2 text-white">
-            <Icon size={18} />
-            <div>
-              <div className="font-black text-base leading-none">{title}</div>
-              <div style={{ fontSize: '11px', opacity: 0.85 }} className="mt-0.5">{sub}</div>
-            </div>
-          </div>
-          {badge && (
-            <span className="bg-white text-xs font-black px-2 py-1 rounded-sm"
-              style={{ color: accent }}>
-              {badge}
-            </span>
-          )}
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-        {items.map(p => <ProductCard key={p.id} product={p} />)}
-      </div>
-
-      <div className="text-right mt-3">
-        <button onClick={onViewAll} className="text-sm font-semibold" style={{ color: COLOR.red }}>
-          Voir toutes les offres →
-        </button>
-      </div>
-    </section>
-  );
-}
-
-// ── Pro sections ──────────────────────────────────────────────────────────────
-function ProSection({
-  title, items, icon: Icon,
-}: {
-  title: string; items: Product[]; icon: React.ElementType;
-}) {
-  if (items.length === 0) return null;
-  return (
-    <section className="max-w-7xl mx-auto px-4 pb-6">
-      <div className="rounded-sm overflow-hidden border mb-4"
-        style={{ borderColor: COLOR.green }}>
-        <div className="flex items-center gap-2 px-4 py-2.5" style={{ background: '#f0faf0' }}>
-          <Icon size={16} style={{ color: COLOR.green }} />
-          <span className="font-black text-sm" style={{ color: COLOR.green }}>{title}</span>
-          <span className="text-xs px-1.5 py-0.5 rounded-sm font-bold text-white ml-1"
-            style={{ background: COLOR.green }}>★ PRO</span>
-        </div>
-      </div>
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-        {items.map(p => <ProductCard key={p.id} product={p} />)}
-      </div>
-    </section>
-  );
-}
-
-// ── Main page ─────────────────────────────────────────────────────────────────
-export default function HomePage() {
-  const { products, navigate, activeProClient } = useApp();
-
-  // Catalogues
-  const promos      = useMemo(() =>
-    products.filter(p => p.inStock && p.discount && p.discount > 0).slice(0, 10), [products]);
-  const nouveautes  = useMemo(() =>
-    products.filter(p => p.inStock && p.isNew)
-      .sort((a, b) => (b.createdAt ?? '').localeCompare(a.createdAt ?? '')).slice(0, 10),
-    [products]);
-  const selection   = useMemo(() =>
-    products.filter(p => p.inStock && p.featured).slice(0, 10), [products]);
-
-  // Pro sections
-  const frequentlyBought = useMemo(() => {
-    if (!activeProClient) return [];
-    const hist = activeProClient.purchaseHistory;
-    if (hist.length > 0) {
-      const counts: Record<string, number> = {};
-      hist.forEach(o => o.items.forEach(i => {
-        counts[i.productId] = (counts[i.productId] || 0) + i.quantity;
-      }));
-      return products
-        .filter(p => counts[p.id] && p.inStock)
-        .sort((a, b) => (counts[b.id] || 0) - (counts[a.id] || 0))
-        .slice(0, 5);
-    }
-    // Fallback: products with overrides
-    const ids = Object.keys(activeProClient.priceOverrides);
-    return products.filter(p => ids.includes(p.id) && p.inStock).slice(0, 5);
-  }, [activeProClient, products]);
-
-  const recommended = useMemo(() => {
-    if (!activeProClient) return [];
-    return [...products].filter(p => p.inStock).sort(() => Math.random() - 0.5).slice(0, 5);
-  }, [activeProClient]); // eslint-disable-line
-
-  // Per-category rows
-  const catSections = useMemo(() =>
-    PRODUCT_CATEGORIES.map(cat => ({
-      cat,
-      items: products.filter(p => p.category === cat && p.inStock).slice(0, 5),
-    })).filter(s => s.items.length > 0),
-    [products],
-  );
-
-  return (
-    <div style={{ background: COLOR.grayBg, minHeight: 'calc(100vh - 120px)' }}>
-
-      {/* ── Hero ───────────────────────────────────────────────────────── */}
-      <div className="ef-hero-gradient">
-        <div className="max-w-7xl mx-auto px-4 py-14 flex items-center justify-between gap-6">
-          <div className="text-white max-w-lg">
-
-            {/* Badge */}
-            <div className="text-xs font-black mb-3 px-3 py-1 inline-flex items-center gap-1.5 rounded-sm tracking-wide"
-              style={{ background: COLOR.red }}>
-              <Zap size={12} /> LIVRAISON EN 30 MIN
-            </div>
-
-            <h1 className="text-3xl md:text-4xl font-black leading-tight mb-3">
-              Vos courses livrées
-              <br />
-              <span style={{ color: COLOR.red }}>express</span>
-              <span className="text-white"> à domicile.</span>
-            </h1>
-
-            <p className="text-gray-400 text-sm mb-6 leading-relaxed">
-              <span style={{ color: COLOR.green }}>Fraîcheur garantie</span> · Produits frais sélectionnés
-              <br />Commandez avant 14h → livré aujourd'hui
-            </p>
-
-            <div className="flex gap-3 flex-wrap">
-              <button onClick={() => navigate('products')}
-                className="text-white font-black px-6 py-3 rounded-sm text-sm"
-                style={{ background: COLOR.red }}>
-                Commander maintenant →
-              </button>
-              <button onClick={() => navigate('products')}
-                className="font-bold px-6 py-3 rounded-sm text-sm text-white"
-                style={{ background: 'rgba(255,255,255,.10)', border: '1px solid rgba(255,255,255,.2)' }}>
-                Voir nos promotions
-              </button>
-            </div>
-          </div>
-
-          {/* Decorative */}
-          <div className="hidden lg:flex flex-col items-center gap-1 opacity-15 select-none">
-            <div style={{ fontSize: '90px' }}>🚗</div>
-            <div className="flex gap-2" style={{ fontSize: '40px' }}>🍎 🥦 🥛</div>
-          </div>
-        </div>
-      </div>
-
-      {/* ── Trust banner ───────────────────────────────────────────────── */}
-      <TrustBanner />
-
-      {/* ── Category quick links ───────────────────────────────────────── */}
-      <div className="max-w-7xl mx-auto px-4 py-6">
-        <div className="grid grid-cols-4 md:grid-cols-9 gap-2">
-          {PRODUCT_CATEGORIES.map(cat => (
-            <button key={cat} onClick={() => navigate('products')}
-              className="bg-white border rounded-sm p-3 flex flex-col items-center gap-1.5 hover:shadow-sm"
-              style={{ borderColor: COLOR.border }}>
-              <span className="text-2xl" aria-hidden="true">{CAT_ICON[cat]}</span>
-              <span className="text-xs font-semibold text-gray-700 leading-tight text-center">{cat}</span>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* ── PRO SECTIONS ───────────────────────────────────────────────── */}
-      {activeProClient && (
-        <>
-          <ProSection
-            title="Ce que vous achetez fréquemment"
-            items={frequentlyBought}
-            icon={TrendingUp}
-          />
-          <ProSection
-            title="Recommandé pour votre activité"
-            items={recommended}
-            icon={Star}
-          />
-        </>
-      )}
-
-      {/* ═══════════════════════════════════════════════════════════════ */}
-      {/* CATALOGUE SECTIONS                                              */}
-      {/* ═══════════════════════════════════════════════════════════════ */}
-
-      {/* Promotions */}
-      <CatalogueSection
-        icon={Tag}      accent={COLOR.red}
-        title="🔥 Nos Promotions"
-        sub="Économisez sur une sélection de produits"
-        badge={`${promos.length} offres`}
-        items={promos}
-        onViewAll={() => navigate('products')}
-      />
-
-      {/* Nouveautés */}
-      <CatalogueSection
-        icon={Sparkles} accent="#7c3aed"
-        title="✨ Nouveautés"
-        sub="Les dernières arrivées chez Express Food"
-        badge="Vient d'arriver"
-        items={nouveautes}
-        onViewAll={() => navigate('products')}
-      />
-
-      {/* Sélection du moment */}
-      <CatalogueSection
-        icon={Star}     accent={COLOR.green}
-        title="⭐ Sélection du Moment"
-        sub="Notre coup de cœur de la semaine"
-        badge={`Choix ${BRAND_NAME}`}
-        items={selection}
-        onViewAll={() => navigate('products')}
-      />
-
-      {/* ── Per-category rows ──────────────────────────────────────────── */}
-      {catSections.map(({ cat, items }) => (
-        <section key={cat} className="max-w-7xl mx-auto px-4 pb-8">
-          <SectionHeader
-            icon={() => <span className="text-xl">{CAT_ICON[cat]}</span>}
-            label={cat}
-            accent={COLOR.red}
-            onViewAll={() => navigate('products')}
-          />
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-            {items.map(p => <ProductCard key={p.id} product={p} />)}
-          </div>
-        </section>
-      ))}
-
-      {/* ── Bottom CTA strip ───────────────────────────────────────────── */}
-      <div className="max-w-7xl mx-auto px-4 pb-8">
-        <div className="rounded-sm overflow-hidden flex flex-col md:flex-row"
-          style={{ background: COLOR.dark }}>
-          <div className="flex-1 p-6 text-white">
-            <div className="text-xs font-black mb-2 px-2 py-0.5 inline-block rounded-sm"
-              style={{ background: COLOR.red }}>NOUVEAU CLIENT</div>
-            <h3 className="font-black text-xl mb-1">
-              -10 € sur votre <span style={{ color: COLOR.red }}>première commande</span>
-            </h3>
-            <p className="text-gray-400 text-sm">Inscrivez-vous à notre newsletter et recevez votre coupon.</p>
-          </div>
-          <div className="flex items-center px-6 py-4 border-t md:border-t-0 md:border-l"
-            style={{ borderColor: 'rgba(255,255,255,.08)' }}>
-            <button onClick={() => navigate('products')}
-              className="text-white font-black px-6 py-2.5 rounded-sm text-sm whitespace-nowrap"
-              style={{ background: COLOR.green }}>
-              Commander maintenant →
-            </button>
-          </div>
-        </div>
       </div>
     </div>
   );
@@ -2201,38 +1471,118 @@ dist/
 .vercel
 </file>
 
-<file path="package.json">
-{
-  "name": "express-food-portal",
-  "private": true,
-  "version": "2.0.0",
-  "type": "module",
-  "scripts": {
-    "dev": "vite",
-    "build": "tsc && vite build",
-    "preview": "vite preview",
-    "type-check": "tsc --noEmit"
-  },
-  "dependencies": {
-    "jspdf": "^2.5.1",
-    "jspdf-autotable": "^3.8.2",
-    "lucide-react": "^0.383.0",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "resend": "^6.12.3"
-  },
-  "devDependencies": {
-    "@types/node": "^25.7.0",
-    "@types/react": "^18.3.3",
-    "@types/react-dom": "^18.3.0",
-    "@vercel/node": "^5.8.1",
-    "@vitejs/plugin-react": "^4.3.1",
-    "autoprefixer": "^10.4.19",
-    "postcss": "^8.4.40",
-    "tailwindcss": "^3.4.7",
-    "typescript": "^5.5.3",
-    "vite": "^5.3.4"
+<file path="api/notify-multipart.ts">
+import type { VercelRequest, VercelResponse } from '@vercel/node';
+
+export const config = { api: { bodyParser: false } };
+
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  if (req.method !== 'POST') return res.status(405).end();
+
+  try {
+    const chunks: Buffer[] = [];
+    for await (const chunk of req as any) {
+      chunks.push(typeof chunk === 'string' ? Buffer.from(chunk) : chunk);
+    }
+    const body = Buffer.concat(chunks);
+    const contentType = (req.headers['content-type'] as string) ?? 'multipart/form-data';
+
+    // ── Pick webhook based on client type ──────────────────────────────────
+    const isPro = req.headers['x-is-pro'] === 'true';
+    const webhookUrl = isPro
+      ? process.env.DISCORD_WEBHOOK_PRO!
+      : process.env.DISCORD_WEBHOOK_URL!;
+
+    const response = await fetch(webhookUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': contentType },
+      body,
+    });
+
+    if (!response.ok) {
+      const text = await response.text().catch(() => '');
+      return res.status(response.status).json({ error: 'Discord error', detail: text });
+    }
+
+    return res.status(200).json({ ok: true });
+  } catch (err: any) {
+    return res.status(500).json({ error: 'Internal error', detail: err?.message });
   }
+}
+</file>
+
+<file path="index.html">
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Express Food — Livraison Express à domicile</title>
+    <meta name="description" content="Express Food : livraison express de courses fraîches à domicile. Fraîcheur garantie."/>
+    <meta name="theme-color" content="#E31E24"/>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+</file>
+
+<file path="src/App.tsx">
+import { AppProvider, useApp } from './context/AppContext';
+import Header            from './components/Header';
+import CartSidebar       from './components/CartSidebar';
+import CheckoutModal     from './components/CheckoutModal';
+import ProLoginModal     from './components/ProLoginModal';
+import ProWelcomeBanner  from './components/ProWelcomeBanner';
+import Footer            from './components/Footer';
+import HomePage          from './pages/HomePage';
+import ProductsPage      from './pages/ProductsPage';
+import AdminLogin        from './pages/AdminLogin';
+import AdminDashboard    from './pages/AdminDashboard';
+
+// ── Inner shell (needs context access) ───────────────────────────────────────
+function AppContent() {
+  const { page, adminAuth } = useApp();
+
+  // Admin is a completely standalone route — no shared layout
+  if (page === 'admin') {
+    return adminAuth ? <AdminDashboard /> : <AdminLogin />;
+  }
+
+  return (
+    <div className="min-h-screen flex flex-col">
+      {/* ── Global modals / drawers (always mounted) ───────────────── */}
+      <ProLoginModal />
+      <CheckoutModal />
+      <CartSidebar />
+
+      {/* ── Pro client welcome banner (renders only when logged in) ─── */}
+      <ProWelcomeBanner />
+
+      {/* ── Sticky site header ─────────────────────────────────────── */}
+      <Header />
+
+      {/* ── Page content ───────────────────────────────────────────── */}
+      <main className="flex-1">
+        {page === 'home'     && <HomePage />}
+        {page === 'products' && <ProductsPage />}
+      </main>
+
+      {/* ── Footer ─────────────────────────────────────────────────── */}
+      <Footer />
+    </div>
+  );
+}
+
+// ── Root ─────────────────────────────────────────────────────────────────────
+export default function App() {
+  return (
+    <AppProvider>
+      <AppContent />
+    </AppProvider>
+  );
 }
 </file>
 
@@ -2470,6 +1820,144 @@ export default function Footer() {
 }
 </file>
 
+<file path="src/components/Header.tsx">
+import { useState, useRef, useEffect } from 'react';
+import { ShoppingCart, Search, Menu, X, Building2 } from 'lucide-react';
+import { useApp } from '../context/AppContext';
+import { COLOR, PRODUCT_CATEGORIES, CAT_ICON } from '../data/constants';
+import Logo from './Logo';
+
+export default function Header() {
+  const { cartCount, setCartOpen, navigate, submitSearch, searchQuery,
+          setProLoginOpen, activeProClient } = useApp();
+
+  const [localSearch, setLocalSearch] = useState(searchQuery);
+  const [mobileOpen,  setMobileOpen]  = useState(false);
+
+  useEffect(() => { setLocalSearch(searchQuery); }, [searchQuery]);
+
+  const handleSearch = () => { if (localSearch.trim()) submitSearch(localSearch.trim()); };
+  const clearSearch  = () => { setLocalSearch(''); submitSearch(''); };
+
+  return (
+    <header style={{ background: COLOR.dark }} className="sticky top-0 z-30">
+
+      {/* ── Announcement ───────────────────────────────────────────── */}
+      <div style={{ background: COLOR.darkBg, fontSize: '11px' }}
+        className="text-gray-400 py-1 px-4 text-center hidden sm:block">
+        🚗&nbsp;
+        <span style={{ color: COLOR.red }}>Livraison Express</span>
+        &nbsp;·&nbsp;
+        <span style={{ color: COLOR.green }}>Fraîcheur garantie</span>
+      </div>
+
+      {/* ── Main row ─────────────────────────────────────────────────── */}
+      <div className="max-w-7xl mx-auto px-4 py-3 flex items-center gap-3">
+
+        {/* Logo */}
+        <button onClick={() => navigate('home')} aria-label="Accueil" className="flex-shrink-0">
+          <Logo size={38} />
+        </button>
+
+        {/* ── Search bar ─────────────────────────────────────────────── */}
+        <div className="flex-1 flex min-w-0">
+          <input
+            type="text"
+            value={localSearch}
+            onChange={e => setLocalSearch(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter') handleSearch(); if (e.key === 'Escape') clearSearch(); }}
+            placeholder="Rechercher un produit, une catégorie…"
+            className="flex-1 min-w-0 pl-4 pr-3 py-2.5 text-sm rounded-l-sm focus:outline-none border-0"
+            style={{ color: '#111', background: 'white' }}
+          />
+          {localSearch && (
+            <button onClick={clearSearch}
+              className="px-2 py-2.5 bg-white text-gray-400 hover:text-gray-600 border-l"
+              style={{ borderColor: '#e5e5e5' }}>
+              <X size={14} />
+            </button>
+          )}
+          <button onClick={handleSearch}
+            className="flex-shrink-0 px-4 py-2.5 rounded-r-sm font-bold text-white text-sm"
+            style={{ background: COLOR.red }}>
+            <Search size={17} />
+          </button>
+        </div>
+
+        {/* Pro Access */}
+        <button
+          onClick={() => setProLoginOpen(true)}
+          className="hidden md:flex items-center gap-1.5 text-xs font-bold px-3 py-2 rounded-sm border flex-shrink-0"
+          style={{
+            background:  activeProClient ? COLOR.green : 'rgba(255,255,255,.08)',
+            borderColor: activeProClient ? COLOR.green  : 'rgba(255,255,255,.15)',
+            color:       'white',
+          }}
+          title={activeProClient ? activeProClient.name : 'Accès Professionnel'}
+        >
+          <Building2 size={14} />
+          <span className="hidden lg:inline">{activeProClient ? '★ Espace Pro' : 'Accès Pro'}</span>
+        </button>
+
+        {/* Cart */}
+        <button onClick={() => setCartOpen(true)}
+          className="flex items-center gap-2 text-white flex-shrink-0 relative"
+          aria-label="Panier">
+          <div className="relative">
+            <ShoppingCart size={24} />
+            {cartCount > 0 && (
+              <span className="absolute -top-2 -right-2 rounded-full w-5 h-5 text-white font-black flex items-center justify-center"
+                style={{ background: COLOR.red, fontSize: '10px' }}>
+                {cartCount > 99 ? '99+' : cartCount}
+              </span>
+            )}
+          </div>
+          <span className="hidden sm:block text-sm font-semibold">Panier</span>
+        </button>
+
+        {/* Mobile toggle */}
+        <button onClick={() => setMobileOpen(v => !v)} className="md:hidden text-white flex-shrink-0">
+          {mobileOpen ? <X size={22} /> : <Menu size={22} />}
+        </button>
+      </div>
+
+      {/* Mobile dropdown */}
+      {mobileOpen && (
+        <div className="md:hidden px-4 pb-3 flex flex-col gap-2"
+          style={{ background: COLOR.dark, borderTop: '1px solid rgba(255,255,255,.08)' }}>
+          <button onClick={() => { setProLoginOpen(true); setMobileOpen(false); }}
+            className="flex items-center justify-center gap-2 text-white text-sm font-bold py-2.5 rounded-sm"
+            style={{ background: activeProClient ? COLOR.green : 'rgba(255,255,255,.12)' }}>
+            <Building2 size={14} />
+            {activeProClient ? `Pro : ${activeProClient.name}` : 'Accès Professionnel'}
+          </button>
+        </div>
+      )}
+
+      {/* ── Category nav ──────────────────────────────────────────────── */}
+      <nav style={{ background: COLOR.navBg, borderTop: '1px solid rgba(255,255,255,.06)' }}
+        aria-label="Catégories">
+        <div className="max-w-7xl mx-auto px-4 overflow-x-auto">
+          <div className="flex">
+            <button onClick={() => { submitSearch(''); navigate('products'); }}
+              className="flex-shrink-0 text-gray-300 text-xs font-black px-4 py-2.5 whitespace-nowrap border-r border-white border-opacity-10"
+              style={{ background: 'rgba(255,255,255,.06)' }}>
+              Tous
+            </button>
+            {PRODUCT_CATEGORIES.map(cat => (
+              <button key={cat} onClick={() => navigate('products')}
+                className="flex-shrink-0 text-gray-300 text-xs font-semibold px-4 py-2.5 whitespace-nowrap border-r border-white border-opacity-10 hover:text-white hover:bg-white hover:bg-opacity-10">
+                {CAT_ICON[cat]}&nbsp;{cat}
+              </button>
+            ))}
+          </div>
+        </div>
+      </nav>
+    </header>
+  );
+}
+</file>
+
 <file path="src/components/ProductCard.tsx">
 import { ShoppingCart, Minus, Plus, Sparkles, Lock } from 'lucide-react';
 import { useApp } from '../context/AppContext';
@@ -2598,6 +2086,42 @@ export default function ProductCard({ product }: { product: Product }) {
         </div>
       </div>
     </article>
+  );
+}
+</file>
+
+<file path="src/components/TrustBanner.tsx">
+import { Zap, Truck, ShieldCheck, Leaf } from 'lucide-react';
+import { COLOR } from '../data/constants';
+
+const ITEMS = [
+  { icon: Truck,       title: 'Livraison à domicile', subtitle: 'Dès 2.99 €',          detail: 'Livraison standard sous 24–48h',           accent: COLOR.green },
+  { icon: ShieldCheck, title: 'Paiement sécurisé',    subtitle: '3D Secure & SSL',     detail: 'Toutes cartes bancaires acceptées',         accent: COLOR.red   },
+  { icon: Leaf,        title: 'Fraîcheur garantie',   subtitle: '100 % frais',          detail: 'Remboursé si non satisfait',               accent: COLOR.green },
+] as const;
+
+export default function TrustBanner() {
+  return (
+    <section aria-label="Nos engagements" className="border-t border-b"
+      style={{ background: '#fff', borderColor: COLOR.border }}>
+      <div className="max-w-7xl mx-auto px-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 divide-x" style={{ borderColor: COLOR.border }}>
+          {ITEMS.map(({ icon: Icon, title, subtitle, detail, accent }) => (
+            <div key={title} className="flex items-start gap-3 px-5 py-4">
+              <div className="flex-shrink-0 w-10 h-10 rounded-sm flex items-center justify-center mt-0.5"
+                style={{ background: accent }}>
+                <Icon size={19} className="text-white" />
+              </div>
+              <div>
+                <p className="text-sm font-black text-gray-800 leading-tight">{title}</p>
+                <p className="text-xs font-bold" style={{ color: accent }}>{subtitle}</p>
+                <p className="text-xs text-gray-400 mt-0.5 leading-tight">{detail}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
   );
 }
 </file>
@@ -3238,12 +2762,12 @@ export const SEED_PRODUCTS: Product[] = [
 export const SEED_PRO_CLIENTS: ProClient[] = [
   {
     id:'pc1', name:'Restaurant Le Marrakchi', company:'SARL Le Marrakchi',
-    accessCode:'123456', createdAt:'2024-09-01', purchaseHistory:[],
+    accessCode:'MK3X9R2A', createdAt:'2024-09-01', purchaseHistory:[],
     priceOverrides:{},
   },
   {
     id:'pc2', name:'Hôtel Atlas Asni', company:'Atlas Hospitality Group',
-    accessCode:'654321', createdAt:'2024-09-15', purchaseHistory:[],
+    accessCode:'HT7B4NQ6', createdAt:'2024-09-15', purchaseHistory:[],
     priceOverrides:{},
   },
 ];
@@ -3283,6 +2807,1096 @@ export const SEED_PRO_CLIENTS: ProClient[] = [
 }
 </file>
 
+<file path="src/pages/HomePage.tsx">
+import { useMemo } from 'react';
+import { Tag, Sparkles, Star, TrendingUp, Zap } from 'lucide-react';
+import { useApp } from '../context/AppContext';
+import { PRODUCT_CATEGORIES, CAT_ICON, COLOR, BRAND_NAME } from '../data/constants';
+import ProductCard  from '../components/ProductCard';
+import type { Product } from '../types';
+
+// ── Reusable section heading ──────────────────────────────────────────────────
+function SectionHeader({
+  icon: Icon, label, sub, accent, onViewAll,
+}: {
+  icon: React.ElementType; label: string; sub?: string; accent: string; onViewAll?: () => void;
+}) {
+  return (
+    <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center gap-2 pl-3 border-l-4" style={{ borderColor: accent }}>
+        <Icon size={18} style={{ color: accent }} />
+        <div>
+          <h2 className="font-black text-gray-800 text-lg leading-none">{label}</h2>
+          {sub && <p className="text-xs text-gray-400 mt-0.5">{sub}</p>}
+        </div>
+      </div>
+      {onViewAll && (
+        <button onClick={onViewAll} className="text-sm font-semibold" style={{ color: COLOR.red }}>
+          Voir tout →
+        </button>
+      )}
+    </div>
+  );
+}
+
+// ── Catalogue section with coloured header bar ────────────────────────────────
+function CatalogueSection({
+  icon: Icon, title, sub, accent, badge, items, onViewAll,
+}: {
+  icon: React.ElementType; title: string; sub: string; accent: string;
+  badge?: string; items: Product[]; onViewAll: () => void;
+}) {
+  if (items.length === 0) return null;
+  return (
+    <section className="max-w-7xl mx-auto px-4 pb-8">
+      <div className="rounded-sm overflow-hidden mb-4">
+        <div className="flex items-center justify-between px-4 py-3" style={{ background: accent }}>
+          <div className="flex items-center gap-2 text-white">
+            <Icon size={18} />
+            <div>
+              <div className="font-black text-base leading-none">{title}</div>
+              <div style={{ fontSize: '11px', opacity: 0.85 }} className="mt-0.5">{sub}</div>
+            </div>
+          </div>
+          {badge && (
+            <span className="bg-white text-xs font-black px-2 py-1 rounded-sm"
+              style={{ color: accent }}>
+              {badge}
+            </span>
+          )}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+        {items.map(p => <ProductCard key={p.id} product={p} />)}
+      </div>
+
+      <div className="text-right mt-3">
+        <button onClick={onViewAll} className="text-sm font-semibold" style={{ color: COLOR.red }}>
+          Voir toutes les offres →
+        </button>
+      </div>
+    </section>
+  );
+}
+
+// ── Pro sections ──────────────────────────────────────────────────────────────
+function ProSection({
+  title, items, icon: Icon,
+}: {
+  title: string; items: Product[]; icon: React.ElementType;
+}) {
+  if (items.length === 0) return null;
+  return (
+    <section className="max-w-7xl mx-auto px-4 pb-6">
+      <div className="rounded-sm overflow-hidden border mb-4"
+        style={{ borderColor: COLOR.green }}>
+        <div className="flex items-center gap-2 px-4 py-2.5" style={{ background: '#f0faf0' }}>
+          <Icon size={16} style={{ color: COLOR.green }} />
+          <span className="font-black text-sm" style={{ color: COLOR.green }}>{title}</span>
+          <span className="text-xs px-1.5 py-0.5 rounded-sm font-bold text-white ml-1"
+            style={{ background: COLOR.green }}>★ PRO</span>
+        </div>
+      </div>
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+        {items.map(p => <ProductCard key={p.id} product={p} />)}
+      </div>
+    </section>
+  );
+}
+
+// ── Main page ─────────────────────────────────────────────────────────────────
+export default function HomePage() {
+  const { products, navigate, activeProClient, submitSearch } = useApp();
+
+  // Catalogues
+  const promos      = useMemo(() =>
+    products.filter(p => p.inStock && p.discount && p.discount > 0).slice(0, 10), [products]);
+  const nouveautes  = useMemo(() =>
+    products.filter(p => p.inStock && p.isNew)
+      .sort((a, b) => (b.createdAt ?? '').localeCompare(a.createdAt ?? '')).slice(0, 10),
+    [products]);
+  const selection   = useMemo(() =>
+    products.filter(p => p.inStock && p.featured).slice(0, 10), [products]);
+
+  // Pro sections
+  const frequentlyBought = useMemo(() => {
+    if (!activeProClient) return [];
+    const hist = activeProClient.purchaseHistory;
+    if (hist.length > 0) {
+      const counts: Record<string, number> = {};
+      hist.forEach(o => o.items.forEach(i => {
+        counts[i.productId] = (counts[i.productId] || 0) + i.quantity;
+      }));
+      return products
+        .filter(p => counts[p.id] && p.inStock)
+        .sort((a, b) => (counts[b.id] || 0) - (counts[a.id] || 0))
+        .slice(0, 5);
+    }
+    // Fallback: products with overrides
+    const ids = Object.keys(activeProClient.priceOverrides);
+    return products.filter(p => ids.includes(p.id) && p.inStock).slice(0, 5);
+  }, [activeProClient, products]);
+
+  const recommended = useMemo(() => {
+    if (!activeProClient) return [];
+    return [...products].filter(p => p.inStock).sort(() => Math.random() - 0.5).slice(0, 5);
+  }, [activeProClient]); // eslint-disable-line
+
+  // Per-category rows
+  const catSections = useMemo(() =>
+    PRODUCT_CATEGORIES.map(cat => ({
+      cat,
+      items: products.filter(p => p.category === cat && p.inStock).slice(0, 5),
+    })).filter(s => s.items.length > 0),
+    [products],
+  );
+
+  return (
+    <div style={{ background: COLOR.grayBg, minHeight: 'calc(100vh - 120px)' }}>
+
+      {/* ── Hero ───────────────────────────────────────────────────────── */}
+      <div className="ef-hero-gradient">
+        <div className="max-w-7xl mx-auto px-4 py-14 flex items-center justify-between gap-6">
+          <div className="text-white max-w-lg">
+
+            {/* Badge */}
+            <h1 className="text-3xl md:text-4xl font-black leading-tight mb-3">
+              Vos courses livrées
+              <br />
+              <span style={{ color: COLOR.red }}>express</span>
+              <span className="text-white"> à domicile.</span>
+            </h1>
+
+            <p className="text-gray-400 text-sm mb-6 leading-relaxed">
+              <span style={{ color: COLOR.green }}>Fraîcheur garantie</span> · Produits frais sélectionnés
+            </p>
+
+            <div className="flex gap-3 flex-wrap">
+              <button onClick={() => navigate('products')}
+                className="text-white font-black px-6 py-3 rounded-sm text-sm"
+                style={{ background: COLOR.red }}>
+                Commander maintenant →
+              </button>
+              <button onClick={() => navigate('products')}
+                className="font-bold px-6 py-3 rounded-sm text-sm text-white"
+                style={{ background: 'rgba(255,255,255,.10)', border: '1px solid rgba(255,255,255,.2)' }}>
+                Voir nos promotions
+              </button>
+            </div>
+          </div>
+
+          {/* Decorative */}
+          <div className="hidden lg:flex flex-col items-center gap-1 opacity-15 select-none">
+            <div style={{ fontSize: '90px' }}>🚗</div>
+            <div className="flex gap-2" style={{ fontSize: '40px' }}>🍎 🥦 🥛</div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Category quick links ───────────────────────────────────────── */}
+      <div className="max-w-7xl mx-auto px-4 py-6">
+        <div className="grid grid-cols-4 md:grid-cols-9 gap-2">
+          {PRODUCT_CATEGORIES.map(cat => (
+            <button key={cat} onClick={() => { submitSearch(cat); }}
+              className="bg-white border rounded-sm p-3 flex flex-col items-center gap-1.5 hover:shadow-sm"
+              style={{ borderColor: COLOR.border }}>
+              <span className="text-2xl" aria-hidden="true">{CAT_ICON[cat]}</span>
+              <span className="text-xs font-semibold text-gray-700 leading-tight text-center">{cat}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* ── PRO SECTIONS ───────────────────────────────────────────────── */}
+      {activeProClient && (
+        <>
+          <ProSection
+            title="Ce que vous achetez fréquemment"
+            items={frequentlyBought}
+            icon={TrendingUp}
+          />
+          <ProSection
+            title="Recommandé pour votre activité"
+            items={recommended}
+            icon={Star}
+          />
+        </>
+      )}
+
+      {/* ═══════════════════════════════════════════════════════════════ */}
+      {/* CATALOGUE SECTIONS                                              */}
+      {/* ═══════════════════════════════════════════════════════════════ */}
+
+      {/* Promotions */}
+      <CatalogueSection
+        icon={Tag}      accent={COLOR.red}
+        title="🔥 Nos Promotions"
+        sub="Économisez sur une sélection de produits"
+        badge={`${promos.length} offres`}
+        items={promos}
+        onViewAll={() => navigate('products')}
+      />
+
+      {/* Nouveautés */}
+      <CatalogueSection
+        icon={Sparkles} accent="#7c3aed"
+        title="✨ Nouveautés"
+        sub="Les dernières arrivées chez Express Food"
+        badge="Vient d'arriver"
+        items={nouveautes}
+        onViewAll={() => navigate('products')}
+      />
+
+      {/* Sélection du moment */}
+      <CatalogueSection
+        icon={Star}     accent={COLOR.green}
+        title="⭐ Sélection du Moment"
+        sub="Notre coup de cœur de la semaine"
+        badge={`Choix ${BRAND_NAME}`}
+        items={selection}
+        onViewAll={() => navigate('products')}
+      />
+
+      {/* ── Per-category rows ──────────────────────────────────────────── */}
+      {catSections.map(({ cat, items }) => (
+        <section key={cat} className="max-w-7xl mx-auto px-4 pb-8">
+          <SectionHeader
+            icon={() => <span className="text-xl">{CAT_ICON[cat]}</span>}
+            label={cat}
+            accent={COLOR.red}
+            onViewAll={() => navigate('products')}
+          />
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+            {items.map(p => <ProductCard key={p.id} product={p} />)}
+          </div>
+        </section>
+      ))}
+    </div>
+  );
+}
+</file>
+
+<file path="api/send-email.ts">
+import type { VercelRequest, VercelResponse } from '@vercel/node';
+import SibApiV3Sdk from 'sib-api-v3-sdk';
+
+const defaultClient = SibApiV3Sdk.ApiClient.instance;
+defaultClient.authentications['api-key'].apiKey = process.env.BREVO_API_KEY!;
+const client = new SibApiV3Sdk.TransactionalEmailsApi();
+
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  if (req.method !== 'POST') return res.status(405).end();
+
+  const {
+    isPro,
+    clientName,
+    clientEmail,
+    proClientName,
+    proClientEmail,
+    orderRef,
+    items,
+    orderTotal,
+  } = req.body;
+
+  const adminEmail = isPro
+    ? process.env.ADMIN_PRO_EMAIL!
+    : process.env.ADMIN_NORMAL_EMAIL!;
+
+  const senderEmail = process.env.BREVO_SENDER_EMAIL!;
+  const senderName  = 'Express Food';
+
+  const itemsHtml = items.map((i: any) =>
+    `<tr>
+      <td style="padding:6px 12px;border-bottom:1px solid #f0f0f0">${i.name}</td>
+      <td style="padding:6px 12px;border-bottom:1px solid #f0f0f0;text-align:center">${i.quantity}</td>
+      ${!isPro
+        ? `<td style="padding:6px 12px;border-bottom:1px solid #f0f0f0;text-align:right">${i.unitPrice.toFixed(2)} €</td>
+           <td style="padding:6px 12px;border-bottom:1px solid #f0f0f0;text-align:right">${i.total.toFixed(2)} €</td>`
+        : ''}
+    </tr>`
+  ).join('');
+
+  const tableHeaders = isPro
+    ? `<th style="text-align:left;padding:8px 12px;background:#111;color:white">Article</th>
+       <th style="text-align:center;padding:8px 12px;background:#111;color:white">Qté</th>`
+    : `<th style="text-align:left;padding:8px 12px;background:#111;color:white">Article</th>
+       <th style="text-align:center;padding:8px 12px;background:#111;color:white">Qté</th>
+       <th style="text-align:right;padding:8px 12px;background:#111;color:white">Prix unit.</th>
+       <th style="text-align:right;padding:8px 12px;background:#111;color:white">Total</th>`;
+
+  const emailHtml = (recipientName: string, showTotal: boolean) => `
+    <div style="font-family:sans-serif;max-width:600px;margin:0 auto">
+      <div style="background:#111;padding:24px;text-align:center">
+        <span style="color:#E31E24;font-weight:900;font-size:22px">EXPRESS </span>
+        <span style="color:#2D8A2D;font-weight:900;font-size:22px">FOOD</span>
+      </div>
+      <div style="background:#E31E24;height:4px"></div>
+      <div style="padding:24px;background:#fff">
+        <h2 style="color:#111;margin-top:0">Nouvelle commande #EF-${orderRef}</h2>
+        <p style="color:#555">Bonjour ${recipientName},</p>
+        <p style="color:#555">
+          ${isPro
+            ? `Une nouvelle commande a été passée par le compte Pro <strong>${proClientName}</strong>.`
+            : `Une nouvelle commande a été reçue de <strong>${clientName}</strong>.`}
+        </p>
+        ${!isPro
+          ? `<p style="color:#555"><strong>Client :</strong> ${clientName}<br/><strong>Email :</strong> ${clientEmail}</p>`
+          : ''}
+        <table style="width:100%;border-collapse:collapse;margin:16px 0">
+          <thead><tr>${tableHeaders}</tr></thead>
+          <tbody>${itemsHtml}</tbody>
+          ${showTotal && !isPro ? `
+          <tfoot>
+            <tr>
+              <td colspan="3" style="padding:10px 12px;text-align:right;font-weight:900;background:#E31E24;color:white">TOTAL TTC</td>
+              <td style="padding:10px 12px;text-align:right;font-weight:900;background:#E31E24;color:white">${orderTotal.toFixed(2)} €</td>
+            </tr>
+          </tfoot>` : ''}
+        </table>
+      </div>
+      <div style="background:#f6f6f6;padding:16px;text-align:center;color:#999;font-size:12px">
+        Express Food · contact@expressfood.ma
+      </div>
+    </div>
+  `;
+
+  try {
+    const sends = [];
+
+    // ── Email to admin ─────────────────────────────────────────────────────
+    sends.push(client.sendTransacEmail({
+      sender: { name: senderName, email: senderEmail },
+      to: [{ email: adminEmail }],
+      subject: `${isPro ? proClientName : clientName} — 🛒 Nouvelle commande #EF-${orderRef}`,
+      htmlContent: emailHtml('Admin', true),
+    }));
+
+    // ── Email to client ────────────────────────────────────────────────────
+    const clientEmailAddress = isPro ? proClientEmail?.trim() : clientEmail?.trim();
+    if (clientEmailAddress) {
+      sends.push(client.sendTransacEmail({
+        sender: { name: senderName, email: senderEmail },
+        to: [{ email: clientEmailAddress }],
+        subject: `✅ Votre commande Express Food #EF-${orderRef} est confirmée`,
+        htmlContent: emailHtml(isPro ? proClientName : clientName, !isPro),
+      }));
+    }
+
+    await Promise.all(sends);
+    return res.status(200).json({ ok: true });
+  } catch (err: any) {
+    console.error('[Brevo] error:', err);
+    return res.status(500).json({ error: 'Email error', detail: err?.message });
+  }
+}
+</file>
+
+<file path="package.json">
+{
+  "name": "express-food-portal",
+  "private": true,
+  "version": "2.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "jspdf": "^2.5.1",
+    "jspdf-autotable": "^3.8.2",
+    "lucide-react": "^0.383.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "sib-api-v3-sdk": "^8.5.0"
+  },
+  "devDependencies": {
+    "@types/node": "^25.7.0",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "@vercel/node": "^5.8.1",
+    "@vitejs/plugin-react": "^4.3.1",
+    "autoprefixer": "^10.4.19",
+    "postcss": "^8.4.40",
+    "tailwindcss": "^3.4.7",
+    "typescript": "^5.5.3",
+    "vite": "^5.3.4"
+  }
+}
+</file>
+
+<file path="src/data/constants.ts">
+// ── Brand ─────────────────────────────────────────────────────────────────────
+export const BRAND_NAME    = 'Express Food';
+export const BRAND_TAGLINE = 'Livraison Express à domicile';
+
+// ── Admin ─────────────────────────────────────────────────────────────────────
+export const ADMIN_ROUTE     = '281938821';
+export const ADMIN_PASSWORD  = import.meta.env.VITE_ADMIN_PASSWORD ?? 'D2L1AV2G1A7!2_846!';
+
+// ── Shopify ───────────────────────────────────────────────────────────────────
+export const SHOPIFY_STORE   = 'your-store-name';
+
+// ── Palette ───────────────────────────────────────────────────────────────────
+export const COLOR = {
+  red:    '#E31E24',
+  green:  '#2D8A2D',
+  dark:   '#111111',
+  navBg:  '#1a1a1a',
+  darkBg: '#0d0d0d',
+  grayBg: '#f6f6f6',
+  border: '#e5e5e5',
+  redDark:'#b91519',
+} as const;
+
+// ── LocalStorage / SessionStorage keys ───────────────────────────────────────
+export const LS_PRODUCTS    = 'ef_products';
+export const LS_CART        = 'ef_cart';
+export const LS_PRO_CLIENTS = 'ef_pro_clients';
+export const SS_ADMIN       = 'ef_admin';
+export const SS_PRO_CLIENT  = 'ef_pro_session';
+
+// ── Categories (real product database) ───────────────────────────────────────
+export const PRODUCT_CATEGORIES = [
+  'Boissons',
+  'Desserts',
+  'Farines & Épices',
+  'Fromages & Crèmes',
+  'Frites & Snacks',
+  'Fruits & Légumes',
+  'Huiles & Condiments',
+  'Packaging',
+  'Pains & Riz',
+  'Promotions',
+  'Sauces',
+  'Viandes',
+] as const;
+
+export const ALL_CATEGORIES = ['All', ...PRODUCT_CATEGORIES] as const;
+
+export const CAT_ICON: Record<string, string> = {
+  'Boissons':           '🥤',
+  'Desserts':           '🍰',
+  'Farines & Épices':   '🌾',
+  'Fromages & Crèmes':  '🧀',
+  'Frites & Snacks':    '🍟',
+  'Fruits & Légumes':   '🥦',
+  'Huiles & Condiments':'🫙',
+  'Packaging':          '📦',
+  'Pains & Riz':        '🍞',
+  'Promotions':         '🏷️',
+  'Sauces':             '🥫',
+  'Viandes':            '🥩',
+};
+
+// ── TVA rates ─────────────────────────────────────────────────────────────────
+export const TVA_RATES = {
+  '5.5%': 0.055,
+  '20%':  0.20,
+} as const;
+
+// ── Price-range presets ───────────────────────────────────────────────────────
+export const PRICE_RANGES: { label: string; val: [number, number] }[] = [
+  { label:'Tous les prix', val:[0,1000] },
+  { label:'Moins de 5 €', val:[0,5]    },
+  { label:'5 – 15 €',     val:[5,15]   },
+  { label:'15 – 50 €',    val:[15,50]  },
+  { label:'Plus de 50 €', val:[50,1000]},
+];
+
+// ── Delivery zones ────────────────────────────────────────────────────────────
+export const DRIVE_STORES = [
+  'Paris – 75001','Paris – 75008','Lyon – Centre',
+  'Marseille – Centre','Bordeaux','Toulouse',
+];
+</file>
+
+<file path="src/types/index.ts">
+// ── Product ───────────────────────────────────────────────────────────────────
+
+export type Category = string; // Now fully dynamic from database
+
+export interface Product {
+  id:           string;
+  name:         string;
+  category:     string;
+  subcategory?: string;
+  price:        number;   // Prix TTC (displayed to normal clients)
+  prixHT?:      number;   // Prix HT (for admin reference)
+  tva?:         string;   // '5.5%' | '20%'
+  unit:         string;
+  image:        string;
+  variantId:    string;
+  inStock:      boolean;
+  description:  string;
+  discount?:    number;   // percentage e.g. 15 = 15% off
+  isNew?:       boolean;
+  featured?:    boolean;
+  tags?:        string[];
+  createdAt?:   string;   // ISO date
+}
+
+// ── Cart ─────────────────────────────────────────────────────────────────────
+
+export interface CartItem extends Product {
+  quantity:       number;
+  effectivePrice: number;
+}
+
+// ── Pro Client ────────────────────────────────────────────────────────────────
+
+export interface PriceOverrides { [productId: string]: number; }
+
+export interface OrderLineItem {
+  productId: string; name: string; unit: string;
+  quantity: number; unitPrice: number; total: number;
+}
+
+export interface OrderRecord {
+  orderId: string; date: string; clientName: string;
+  phone: string; email: string; items: OrderLineItem[]; subtotal: number;
+}
+
+export interface ProClient {
+  id: string; name: string; company?: string;
+  accessCode: string; priceOverrides: PriceOverrides;
+  purchaseHistory: OrderRecord[]; createdAt: string;
+  email?: string;
+}
+
+// ── Context ───────────────────────────────────────────────────────────────────
+
+export interface AppContextType {
+  products: Product[];
+  addProduct: (p: Omit<Product, 'id'>) => void;
+  updateProduct: (p: Product) => void;
+  deleteProduct: (id: string) => void;
+  cart: CartItem[];
+  cartOpen: boolean;
+  setCartOpen: (v: boolean) => void;
+  addToCart: (product: Product) => void;
+  removeFromCart: (id: string) => void;
+  updateQty: (id: string, qty: number) => void;
+  clearCart: () => void;
+  cartTotal: number;
+  cartCount: number;
+  priceFor: (product: Product) => number;
+  effectivePrice: (product: Product) => number;
+  page: PageKey;
+  navigate: (p: PageKey) => void;
+  searchQuery: string;
+  setSearchQuery: (q: string) => void;
+  submitSearch: (q: string) => void;
+  adminAuth: boolean;
+  login: (pw: string) => boolean;
+  logout: () => void;
+  proClients: ProClient[];
+  addProClient: (name: string, company?: string, email?: string) => ProClient;
+  updateProClient: (c: ProClient) => void;
+  deleteProClient: (id: string) => void;
+  setPriceOverride: (clientId: string, productId: string, price: number | null) => void;
+  activeProClient: ProClient | null;
+  loginProClient: (code: string) => boolean;
+  logoutProClient: () => void;
+  recordOrder: (clientId: string, order: OrderRecord) => void;
+  proLoginOpen: boolean;
+  setProLoginOpen: (v: boolean) => void;
+  checkoutOpen: boolean;
+  setCheckoutOpen: (v: boolean) => void;
+  checkout: () => void;
+}
+
+export type PageKey = 'home' | 'products' | 'admin';
+export type SortOption = 'default' | 'price-asc' | 'price-desc' | 'name';
+export type PriceRange = [number, number];
+export type ImageInputMode = 'url' | 'upload';
+
+export interface ProductFormState {
+  name: string; category: string; subcategory: string;
+  price: string; prixHT: string; tva: string;
+  unit: string; image: string; variantId: string;
+  inStock: boolean; description: string;
+  discount: string; isNew: boolean; featured: boolean;
+}
+
+export interface PdfOrderData {
+  orderId: string; clientName: string; phone: string; email: string;
+  date: string; items: OrderLineItem[]; subtotal: number;
+  isProClient: boolean; proClientName?: string;
+}
+</file>
+
+<file path="src/utils/pdfGenerator.ts">
+// src/utils/pdfGenerator.ts
+// Generates branded Express Food PDFs.
+// Pass withPrices: true  → includes unit prices + total (client-facing / admin)
+// Pass withPrices: false → items + quantity only, NO prices (admin no-price copy)
+
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+
+export interface PdfOptions {
+  orderRef: string;
+  clientName: string;
+  clientPhone: string;
+  clientEmail?: string;
+  isProClient: boolean;
+  proClientName?: string;
+  items: Array<{
+    name: string;
+    quantity: number;
+    unitPrice: number;
+    totalPrice: number;
+  }>;
+  orderTotal: number;
+  /** true = show prices (default); false = items + qty only */
+  withPrices?: boolean;
+}
+
+/** Generates and auto-downloads a PDF. */
+export function generatePDF(opts: PdfOptions): void {
+  buildDoc(opts).save(`commande_EF-${opts.orderRef}.pdf`);
+}
+
+/** Generates and returns the PDF as a Blob (for webhook attachment). */
+export function generatePDFBlob(opts: PdfOptions): Blob {
+  return buildDoc(opts).output("blob");
+}
+
+// ─── Internal builder ────────────────────────────────────────────────────────
+
+function buildDoc(opts: PdfOptions): jsPDF {
+  const showPrices = opts.withPrices !== false; // default true
+
+  const doc   = new jsPDF({ unit: "mm", format: "a4" });
+  const red   = "#E31E24";
+  const green = "#2D8A2D";
+  const dark  = "#111111";
+  const w     = doc.internal.pageSize.getWidth();
+
+  // ── Header stripes ─────────────────────────────────────────────────────────
+  doc.setFillColor(red);
+  doc.rect(0, 0, w, 22, "F");
+  doc.setFillColor(green);
+  doc.rect(0, 22, w, 5, "F");
+
+  doc.setTextColor("#FFFFFF");
+  doc.setFontSize(18);
+  doc.setFont("helvetica", "bold");
+  const headerTitle = showPrices
+    ? "Express Food — Bon de commande"
+    : "Express Food — Bon de commande (Admin — sans prix)";
+  doc.text(headerTitle, w / 2, 14, { align: "center" });
+
+  // ── Order ref box ──────────────────────────────────────────────────────────
+  doc.setFillColor("#F5F5F5");
+  doc.roundedRect(14, 32, w - 28, 20, 3, 3, "F");
+  doc.setTextColor(dark);
+  doc.setFontSize(12);
+  doc.setFont("helvetica", "bold");
+  doc.text(`Commande #EF-${opts.orderRef}`, 20, 41);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
+  doc.setTextColor("#555555");
+  doc.text(`Émis le : ${new Date().toLocaleString("fr-FR")}`, 20, 48);
+
+  // ── Client details ─────────────────────────────────────────────────────────
+  doc.setFontSize(10);
+  doc.setTextColor(dark);
+  doc.setFont("helvetica", "bold");
+  doc.text("Informations client", 14, 62);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
+  doc.setTextColor("#333333");
+  doc.text(`Nom : ${opts.clientName}`, 14, 69);
+  doc.text(`Téléphone : ${opts.clientPhone}`, 14, 75);
+  if (opts.clientEmail) doc.text(`Email : ${opts.clientEmail}`, 14, 81);
+
+  if (opts.isProClient && opts.proClientName) {
+    const badgeY = opts.clientEmail ? 90 : 84;
+    const badgeLabel = `Compte Pro : ${opts.proClientName}`;
+    // measure text width to size the badge correctly
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8);
+    const textWidth = doc.getTextWidth(badgeLabel) + 8;
+    doc.setFillColor(green);
+    doc.roundedRect(14, badgeY - 5, textWidth, 8, 2, 2, "F");
+    doc.setTextColor("#FFFFFF");
+    doc.text(badgeLabel, 17, badgeY);
+  }
+
+  // ── Items table ────────────────────────────────────────────────────────────
+  const tableStartY = opts.isProClient && opts.proClientName
+    ? (opts.clientEmail ? 102 : 96)
+    : (opts.clientEmail ? 90 : 84);
+
+  doc.setTextColor(dark);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
+  doc.text("Détail de la commande", 14, tableStartY);
+
+  if (showPrices) {
+    // With prices: Article | Qté | Prix unit. | Total
+    autoTable(doc, {
+      startY: tableStartY + 4,
+      head: [["Article", "Qté", "Prix unit.", "Total"]],
+      body: opts.items.map((item) => [
+        item.name,
+        item.quantity.toString(),
+        `${item.unitPrice.toFixed(2)} €`,
+        `${item.totalPrice.toFixed(2)} €`,
+      ]),
+      headStyles: { fillColor: red, textColor: "#FFFFFF", fontStyle: "bold", fontSize: 9 },
+      bodyStyles: { fontSize: 9, textColor: dark },
+      alternateRowStyles: { fillColor: "#FAFAFA" },
+      columnStyles: {
+        0: { cellWidth: "auto" },
+        1: { cellWidth: 20, halign: "center" },
+        2: { cellWidth: 30, halign: "right" },
+        3: { cellWidth: 30, halign: "right" },
+      },
+      foot: [[
+        { content: "TOTAL", colSpan: 3, styles: { halign: "right", fontStyle: "bold", fillColor: red, textColor: "#FFFFFF" } },
+        { content: `${opts.orderTotal.toFixed(2)} €`, styles: { halign: "right", fontStyle: "bold", fillColor: red, textColor: "#FFFFFF" } },
+      ]],
+      margin: { left: 14, right: 14 },
+    });
+  } else {
+    // Without prices: Article | Quantité only
+    autoTable(doc, {
+      startY: tableStartY + 4,
+      head: [["Article", "Quantité"]],
+      body: opts.items.map((item) => [item.name, item.quantity.toString()]),
+      headStyles: { fillColor: red, textColor: "#FFFFFF", fontStyle: "bold", fontSize: 9 },
+      bodyStyles: { fontSize: 9, textColor: dark },
+      alternateRowStyles: { fillColor: "#FAFAFA" },
+      columnStyles: {
+        0: { cellWidth: "auto" },
+        1: { cellWidth: 30, halign: "center" },
+      },
+      margin: { left: 14, right: 14 },
+    });
+  }
+
+  // ── Footer ─────────────────────────────────────────────────────────────────
+  const finalY = (doc as any).lastAutoTable.finalY + 10;
+  doc.setDrawColor(green);
+  doc.setLineWidth(0.5);
+  doc.line(14, finalY, w - 14, finalY);
+  doc.setFontSize(8);
+  doc.setTextColor("#888888");
+  doc.setFont("helvetica", "normal");
+  const footerText = showPrices
+    ? "Merci pour votre commande — Express Food · contact@expressfood.ma"
+    : "Document réservé à l'usage interne — Express Food";
+  doc.text(footerText, w / 2, finalY + 6, { align: "center" });
+
+  return doc;
+}
+</file>
+
+<file path="src/components/Logo.tsx">
+interface Props {
+  size?: number;
+  variant?: 'full' | 'mark';
+  className?: string;
+}
+
+export default function Logo({ size = 40, className = '' }: Props) {
+  return (
+    <img
+      src="/logo.png"
+      alt="Express Food"
+      style={{ height: size * 1.4, width: 'auto', objectFit: 'contain' }}
+      className={className}
+    />
+  );
+}
+
+export function LogoMark({ width, height }: { width: number; height: number }) {
+  return (
+    <img
+      src="/logo.png"
+      alt="Express Food"
+      style={{ height: height * 1.4, width: 'auto', objectFit: 'contain' }}
+    />
+  );
+}
+
+export function LogoDark({ size = 40, className = '' }: Omit<Props, 'variant'>) {
+  return <Logo size={size} className={className} />;
+}
+
+export function LogoLight({ size = 40, className = '' }: Omit<Props, 'variant'>) {
+  return <Logo size={size} className={className} />;
+}
+</file>
+
+<file path="src/context/AppContext.tsx">
+import {
+  createContext, useContext, useState, useEffect,
+  useCallback, useMemo, type ReactNode,
+} from 'react';
+import type { Product, CartItem, AppContextType, PageKey, ProClient, OrderRecord } from '../types';
+import { SEED_PRODUCTS, SEED_PRO_CLIENTS } from '../data/products';
+import {
+  ADMIN_ROUTE, ADMIN_PASSWORD, SHOPIFY_STORE,
+  LS_PRODUCTS, LS_CART, LS_PRO_CLIENTS,
+  SS_ADMIN, SS_PRO_CLIENT,
+} from '../data/constants';
+
+// ── Storage helpers ───────────────────────────────────────────────────────────
+function readLS<T>(key: string, fallback: T): T {
+  try { const r = localStorage.getItem(key); return r ? JSON.parse(r) : fallback; }
+  catch { return fallback; }
+}
+function writeLS(key: string, val: unknown) {
+  try { localStorage.setItem(key, JSON.stringify(val)); } catch {}
+}
+
+function initialPage(): PageKey {
+  const h = window.location.hash.replace(/^#\/?/, '');
+  if (h === ADMIN_ROUTE) return 'admin';
+  if (h === 'products')  return 'products';
+  return 'home';
+}
+
+// ── alphanumerical code generator ────────────────────────────────────────────────────
+const ALPHANUM = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no 0/O/1/I to avoid confusion
+function genAccessCode(existing: string[]): string {
+  let code: string;
+  do {
+    code = Array.from({ length: 8 }, () =>
+      ALPHANUM[Math.floor(Math.random() * ALPHANUM.length)]
+    ).join('');
+  } while (existing.includes(code));
+  return code;
+}
+
+const AppContext = createContext<AppContextType | null>(null);
+
+export function AppProvider({ children }: { children: ReactNode }) {
+
+  // ── Cache busting — bump version whenever SEED_PRODUCTS changes ──────────
+  const CACHE_VERSION = 'v2';
+  if (localStorage.getItem('ef_version') !== CACHE_VERSION) {
+    localStorage.removeItem('ef_products');
+    localStorage.setItem('ef_version', CACHE_VERSION);
+  }
+
+  const [products,  setProducts]  = useState<Product[]>   (() => readLS(LS_PRODUCTS,    SEED_PRODUCTS));
+  const [cart,      setCart]      = useState<CartItem[]>   (() => readLS(LS_CART,        []));
+  const [proClients,setProClients]= useState<ProClient[]>  (() => readLS(LS_PRO_CLIENTS, SEED_PRO_CLIENTS));
+  const [cartOpen,  setCartOpen]  = useState(false);
+  const [adminAuth, setAdminAuth] = useState(() => sessionStorage.getItem(SS_ADMIN) === 'yes');
+  const [page,      setPage]      = useState<PageKey>(initialPage);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [proLoginOpen,  setProLoginOpen]  = useState(false);
+  const [checkoutOpen,  setCheckoutOpen]  = useState(false);
+  const [activeProClient, setActiveProClient] = useState<ProClient | null>(() => {
+    try {
+      const s = sessionStorage.getItem(SS_PRO_CLIENT);
+      if (!s) return null;
+      const saved = JSON.parse(s) as ProClient;
+      // Refresh from proClients state in case overrides changed
+      return saved;
+    } catch { return null; }
+  });
+
+  useEffect(() => writeLS(LS_PRODUCTS,    products),   [products]);
+  useEffect(() => writeLS(LS_CART,        cart),       [cart]);
+  useEffect(() => writeLS(LS_PRO_CLIENTS, proClients), [proClients]);
+
+  // Sync active pro client when proClients list changes
+  useEffect(() => {
+    if (activeProClient) {
+      const refreshed = proClients.find(c => c.id === activeProClient.id);
+      if (refreshed) {
+        setActiveProClient(refreshed);
+        sessionStorage.setItem(SS_PRO_CLIENT, JSON.stringify(refreshed));
+      }
+    }
+  }, [proClients]); // eslint-disable-line
+
+  // Hash router
+  const navigate = useCallback((p: PageKey) => {
+    setPage(p);
+    window.location.hash = p === 'home' ? '' : p;
+    window.scrollTo({ top: 0 });
+  }, []);
+
+  useEffect(() => {
+    const onHash = () => setPage(initialPage());
+    window.addEventListener('hashchange', onHash);
+    return () => window.removeEventListener('hashchange', onHash);
+  }, []);
+
+  // Search
+  const submitSearch = useCallback((q: string) => {
+    setSearchQuery(q);
+    navigate('products');
+  }, [navigate]);
+
+  // ── Pricing helpers ─────────────────────────────────────────────────────────
+  const priceFor = useCallback((product: Product): number => {
+    if (activeProClient) {
+      const override = activeProClient.priceOverrides[product.id];
+      if (override !== undefined && override !== null) return override;
+    }
+    return product.price;
+  }, [activeProClient]);
+
+  // Price after discount (for non-pro standard display)
+  const effectivePrice = useCallback((product: Product): number => {
+    const base = priceFor(product);
+    if (!activeProClient && product.discount) {
+      return parseFloat((base * (1 - product.discount / 100)).toFixed(2));
+    }
+    return base;
+  }, [priceFor, activeProClient]);
+
+  // ── Cart ────────────────────────────────────────────────────────────────────
+  const addToCart = useCallback((product: Product) => {
+    const ep = effectivePrice(product);
+    setCart(prev => {
+      const ex = prev.find(i => i.id === product.id);
+      return ex
+        ? prev.map(i => i.id === product.id ? { ...i, quantity: i.quantity + 1 } : i)
+        : [...prev, { ...product, quantity: 1, effectivePrice: ep }];
+    });
+  }, [effectivePrice]);
+
+  const removeFromCart  = useCallback((id: string) => setCart(p => p.filter(i => i.id !== id)), []);
+  const updateQty       = useCallback((id: string, qty: number) => {
+    if (qty <= 0) { removeFromCart(id); return; }
+    setCart(p => p.map(i => i.id === id ? { ...i, quantity: qty } : i));
+  }, [removeFromCart]);
+  const clearCart = useCallback(() => setCart([]), []);
+
+  const cartTotal = useMemo(() => cart.reduce((s, i) => s + i.effectivePrice * i.quantity, 0), [cart]);
+  const cartCount = useMemo(() => cart.reduce((s, i) => s + i.quantity, 0), [cart]);
+
+  // ── Auth ────────────────────────────────────────────────────────────────────
+  const login = useCallback((pw: string): boolean => {
+    if (pw === ADMIN_PASSWORD) { sessionStorage.setItem(SS_ADMIN, 'yes'); setAdminAuth(true); return true; }
+    return false;
+  }, []);
+
+  const logout = useCallback(() => {
+    sessionStorage.removeItem(SS_ADMIN);
+    setAdminAuth(false);
+    navigate('home');
+  }, [navigate]);
+
+  // ── Pro client auth ─────────────────────────────────────────────────────────
+  const loginProClient = useCallback((code: string): boolean => {
+    const client = proClients.find(c => c.accessCode === code.trim());
+    if (client) {
+      sessionStorage.setItem(SS_PRO_CLIENT, JSON.stringify(client));
+      setActiveProClient(client);
+      setProLoginOpen(false);
+      return true;
+    }
+    return false;
+  }, [proClients]);
+
+  const logoutProClient = useCallback(() => {
+    sessionStorage.removeItem(SS_PRO_CLIENT);
+    setActiveProClient(null);
+  }, []);
+
+  // ── Pro clients CRUD ────────────────────────────────────────────────────────
+  const addProClient = useCallback((name: string, company?: string, email?: string): ProClient => {
+    const existing = proClients.map(c => c.accessCode);
+    const newClient: ProClient = {
+      id: `pc${Date.now()}`,
+      name,
+      company,
+      email,
+      accessCode: genAccessCode(existing),
+      priceOverrides: {},
+      purchaseHistory: [],
+      createdAt: new Date().toISOString().split('T')[0],
+    };
+    setProClients(prev => [...prev, newClient]);
+    return newClient;
+  }, [proClients]);
+
+  const updateProClient = useCallback((c: ProClient) => {
+    setProClients(prev => prev.map(x => x.id === c.id ? c : x));
+  }, []);
+
+  const deleteProClient = useCallback((id: string) => {
+    setProClients(prev => prev.filter(x => x.id !== id));
+    if (activeProClient?.id === id) logoutProClient();
+  }, [activeProClient, logoutProClient]);
+
+  const setPriceOverride = useCallback((clientId: string, productId: string, price: number | null) => {
+    setProClients(prev => prev.map(c => {
+      if (c.id !== clientId) return c;
+      const overrides = { ...c.priceOverrides };
+      if (price === null) delete overrides[productId];
+      else overrides[productId] = price;
+      return { ...c, priceOverrides: overrides };
+    }));
+  }, []);
+
+  const recordOrder = useCallback((clientId: string, order: OrderRecord) => {
+    setProClients(prev => prev.map(c =>
+      c.id === clientId
+        ? { ...c, purchaseHistory: [order, ...c.purchaseHistory] }
+        : c
+    ));
+  }, []);
+
+  // ── Product CRUD ────────────────────────────────────────────────────────────
+  const addProduct    = useCallback((p: Omit<Product, 'id'>) =>
+    setProducts(prev => [...prev, { ...p, id: `p${Date.now()}` }]), []);
+  const updateProduct = useCallback((p: Product) =>
+    setProducts(prev => prev.map(x => x.id === p.id ? p : x)), []);
+  const deleteProduct = useCallback((id: string) => {
+    setProducts(prev => prev.filter(x => x.id !== id));
+    setCart(prev => prev.filter(x => x.id !== id));
+  }, []);
+
+  // ── Shopify checkout (fallback) ─────────────────────────────────────────────
+  const checkout = useCallback(() => {
+    if (!cart.length) return;
+    const str = cart.map(i => `${i.variantId}:${i.quantity}`).join(',');
+    window.open(`https://${SHOPIFY_STORE}.myshopify.com/cart/${str}`, '_blank');
+  }, [cart]);
+
+  return (
+    <AppContext.Provider value={{
+      products, addProduct, updateProduct, deleteProduct,
+      cart, cartOpen, setCartOpen, addToCart, removeFromCart, updateQty,
+      clearCart, cartTotal, cartCount,
+      priceFor, effectivePrice,
+      page, navigate,
+      searchQuery, setSearchQuery, submitSearch,
+      adminAuth, login, logout,
+      proClients, addProClient, updateProClient, deleteProClient,
+      setPriceOverride,
+      activeProClient, loginProClient, logoutProClient, recordOrder,
+      proLoginOpen, setProLoginOpen,
+      checkoutOpen, setCheckoutOpen,
+      checkout,
+    }}>
+      {children}
+    </AppContext.Provider>
+  );
+}
+
+// eslint-disable-next-line react-refresh/only-export-components
+export function useApp(): AppContextType {
+  const ctx = useContext(AppContext);
+  if (!ctx) throw new Error('useApp must be used inside <AppProvider>');
+  return ctx;
+}
+</file>
+
 <file path="src/pages/AdminDashboard.tsx">
 import { useState, useRef, useMemo } from 'react';
 import {
@@ -3294,7 +3908,7 @@ import { useApp } from '../context/AppContext';
 import SafeImage from '../components/SafeImage';
 import { COLOR, PRODUCT_CATEGORIES, ALL_CATEGORIES, BRAND_NAME } from '../data/constants';
 import { LogoLight } from '../components/Logo';
-import type { Product, ProClient, ProductFormState, ImageInputMode, GlobalOrder } from '../types';
+import type { Product, ProClient, ProductFormState, ImageInputMode } from '../types';
 
 // ── Shared toggle ──────────────────────────────────────────────────────────────
 function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
@@ -3616,7 +4230,8 @@ function ProClientsTab() {
 
   const handleAddClient = () => {
     if (!newName.trim()) { setAddErr('Le nom est requis.'); return; }
-    const client = addProClient(newName.trim(), newCompany.trim() || undefined);
+    const client = addProClient(newName.trim(), newCompany.trim() || undefined, newEmail.trim() || undefined);
+    setNewEmail('');
     setLastAdded(client);
     setNewName(''); setNewCompany(''); setAddErr('');
   };
@@ -3816,315 +4431,14 @@ function ProClientsTab() {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// ORDERS HISTORY TAB
-// ═══════════════════════════════════════════════════════════════════════════════
-const STATUS_LABELS: Record<GlobalOrder['status'], string> = {
-  confirmed:  'Confirmée',
-  pending:    'En attente',
-  cancelled:  'Annulée',
-};
-const STATUS_COLORS: Record<GlobalOrder['status'], { bg: string; text: string; border: string }> = {
-  confirmed:  { bg: '#f0faf0', text: '#2D8A2D', border: '#2D8A2D40' },
-  pending:    { bg: '#fffbeb', text: '#d97706', border: '#d9770640' },
-  cancelled:  { bg: '#fef2f2', text: '#ef4444', border: '#ef444440' },
-};
-
-function OrdersTab() {
-  const { globalOrders, updateOrderStatus } = useApp();
-
-  const [search,       setSearch]       = useState('');
-  const [statusFilter, setStatusFilter] = useState<'all' | GlobalOrder['status']>('all');
-  const [proFilter,    setProFilter]    = useState<'all' | 'pro' | 'standard'>('all');
-  const [expandedId,   setExpandedId]   = useState<string | null>(null);
-  const [sortDir,      setSortDir]      = useState<'desc' | 'asc'>('desc');
-
-  const filtered = useMemo(() => {
-    let list = [...globalOrders];
-    if (statusFilter !== 'all') list = list.filter(o => o.status === statusFilter);
-    if (proFilter === 'pro')      list = list.filter(o => o.isProClient);
-    if (proFilter === 'standard') list = list.filter(o => !o.isProClient);
-    if (search.trim()) {
-      const q = search.toLowerCase();
-      list = list.filter(o =>
-        o.clientName.toLowerCase().includes(q) ||
-        o.clientPhone.includes(q) ||
-        o.orderId.includes(q) ||
-        (o.proClientName ?? '').toLowerCase().includes(q)
-      );
-    }
-    list.sort((a, b) => {
-      const diff = new Date(b.date).getTime() - new Date(a.date).getTime();
-      return sortDir === 'desc' ? diff : -diff;
-    });
-    return list;
-  }, [globalOrders, statusFilter, proFilter, search, sortDir]);
-
-  // KPI stats
-  const totalRevenue   = globalOrders.filter(o => o.status !== 'cancelled').reduce((s, o) => s + o.orderTotal, 0);
-  const confirmedCount = globalOrders.filter(o => o.status === 'confirmed').length;
-  const proCount       = globalOrders.filter(o => o.isProClient).length;
-  const avgOrder       = confirmedCount > 0
-    ? globalOrders.filter(o => o.status === 'confirmed').reduce((s, o) => s + o.orderTotal, 0) / confirmedCount
-    : 0;
-
-  return (
-    <>
-      {/* KPI Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
-        {[
-          { label: 'Commandes totales', value: globalOrders.length,              icon: <ShoppingBag size={18} />, color: COLOR.red,   suffix: '' },
-          { label: 'Confirmées',        value: confirmedCount,                   icon: <Check size={18} />,       color: COLOR.green, suffix: '' },
-          { label: 'CA total (€)',      value: totalRevenue.toFixed(2),          icon: <Euro size={18} />,        color: '#7c3aed',   suffix: '€' },
-          { label: 'Panier moyen',      value: avgOrder.toFixed(2),             icon: <TrendingUp size={18} />,  color: '#d97706',   suffix: '€' },
-        ].map(s => (
-          <div key={s.label} className="bg-white border rounded-sm p-4" style={{ borderColor: '#e5e5e5' }}>
-            <div className="w-8 h-8 rounded-sm flex items-center justify-center mb-2 text-white"
-              style={{ background: s.color }}>
-              {s.icon}
-            </div>
-            <div className="font-black text-2xl" style={{ color: s.color }}>
-              {s.value}{s.suffix && s.suffix !== '€' ? ` ${s.suffix}` : ''}
-            </div>
-            <div className="text-xs text-gray-500 mt-0.5">{s.label}</div>
-          </div>
-        ))}
-      </div>
-
-      {/* Pro split pill */}
-      {globalOrders.length > 0 && (
-        <div className="bg-white border rounded-sm px-4 py-3 mb-4 flex items-center gap-4 flex-wrap" style={{ borderColor: '#e5e5e5' }}>
-          <span className="text-xs font-black text-gray-500 uppercase tracking-wider">Répartition</span>
-          <div className="flex-1 flex items-center gap-2 min-w-40">
-            <div className="flex-1 h-2 rounded-full overflow-hidden bg-gray-100">
-              <div className="h-full rounded-full" style={{ width: `${(proCount / globalOrders.length) * 100}%`, background: COLOR.green }} />
-            </div>
-            <span className="text-xs font-semibold" style={{ color: COLOR.green }}>
-              {proCount} Pro ({Math.round((proCount / globalOrders.length) * 100)}%)
-            </span>
-          </div>
-          <span className="text-xs font-semibold text-gray-500">
-            {globalOrders.length - proCount} Standard
-          </span>
-        </div>
-      )}
-
-      {/* Filters toolbar */}
-      <div className="bg-white border rounded-sm px-4 py-3 mb-3 flex flex-wrap items-center gap-3" style={{ borderColor: '#e5e5e5' }}>
-        {/* Search */}
-        <div className="relative">
-          <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
-          <input type="text" value={search} onChange={e => setSearch(e.target.value)}
-            placeholder="Nom, téléphone, réf…"
-            className="border pl-8 pr-7 py-1.5 text-sm rounded-sm w-48 focus:outline-none"
-            style={{ borderColor: '#e5e5e5' }} />
-          {search && (
-            <button onClick={() => setSearch('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400">
-              <X size={12} />
-            </button>
-          )}
-        </div>
-
-        {/* Status filter */}
-        <div className="flex gap-1">
-          {(['all', 'confirmed', 'pending', 'cancelled'] as const).map(s => (
-            <button key={s} onClick={() => setStatusFilter(s)}
-              className="text-xs px-2.5 py-1.5 rounded-sm border font-semibold"
-              style={{
-                background:  statusFilter === s ? COLOR.red : 'white',
-                color:       statusFilter === s ? 'white' : '#555',
-                borderColor: '#e5e5e5',
-              }}>
-              {s === 'all' ? 'Tous' : STATUS_LABELS[s]}
-            </button>
-          ))}
-        </div>
-
-        {/* Pro filter */}
-        <div className="flex gap-1">
-          {(['all', 'pro', 'standard'] as const).map(f => (
-            <button key={f} onClick={() => setProFilter(f)}
-              className="text-xs px-2.5 py-1.5 rounded-sm border font-semibold"
-              style={{
-                background:  proFilter === f ? COLOR.dark : 'white',
-                color:       proFilter === f ? 'white' : '#555',
-                borderColor: '#e5e5e5',
-              }}>
-              {f === 'all' ? 'Tous clients' : f === 'pro' ? '★ Pro' : 'Standard'}
-            </button>
-          ))}
-        </div>
-
-        {/* Sort */}
-        <button onClick={() => setSortDir(d => d === 'desc' ? 'asc' : 'desc')}
-          className="ml-auto flex items-center gap-1.5 text-xs font-semibold text-gray-500 border px-2.5 py-1.5 rounded-sm"
-          style={{ borderColor: '#e5e5e5' }}>
-          <Calendar size={12} />
-          {sortDir === 'desc' ? 'Plus récent' : 'Plus ancien'}
-          {sortDir === 'desc' ? <ChevronDown size={12} /> : <ChevronUp size={12} />}
-        </button>
-
-        <span className="text-xs text-gray-400">
-          {filtered.length} commande{filtered.length !== 1 ? 's' : ''}
-        </span>
-      </div>
-
-      {/* Orders list */}
-      {filtered.length === 0 ? (
-        <div className="bg-white border rounded-sm p-16 text-center" style={{ borderColor: '#e5e5e5' }}>
-          <ClipboardList size={48} className="mx-auto mb-4" style={{ color: '#e5e5e5' }} />
-          <p className="font-black text-gray-400 text-lg mb-1">Aucune commande trouvée</p>
-          <p className="text-sm text-gray-400">
-            {globalOrders.length === 0
-              ? 'Les commandes apparaîtront ici dès qu\'un client finalise une commande.'
-              : 'Essayez de modifier vos filtres.'}
-          </p>
-          {globalOrders.length > 0 && (
-            <button onClick={() => { setSearch(''); setStatusFilter('all'); setProFilter('all'); }}
-              className="mt-4 text-sm font-bold px-5 py-2 rounded-sm text-white"
-              style={{ background: COLOR.red }}>
-              Réinitialiser les filtres
-            </button>
-          )}
-        </div>
-      ) : (
-        <div className="flex flex-col gap-2">
-          {filtered.map(order => {
-            const isExpanded = expandedId === order.orderId;
-            const sc = STATUS_COLORS[order.status];
-            const dateStr = new Date(order.date).toLocaleString('fr-FR', {
-              day: '2-digit', month: 'short', year: 'numeric',
-              hour: '2-digit', minute: '2-digit',
-            });
-
-            return (
-              <div key={order.orderId} className="bg-white border rounded-sm overflow-hidden" style={{ borderColor: '#e5e5e5' }}>
-                {/* Order header row */}
-                <div
-                  className="flex flex-wrap items-center gap-3 px-4 py-3 cursor-pointer hover:bg-gray-50"
-                  onClick={() => setExpandedId(isExpanded ? null : order.orderId)}
-                >
-                  {/* Ref + date */}
-                  <div className="flex-shrink-0">
-                    <div className="font-black text-sm" style={{ color: COLOR.red }}>#EF-{order.orderId}</div>
-                    <div className="text-xs text-gray-400">{dateStr}</div>
-                  </div>
-
-                  {/* Divider */}
-                  <div className="h-8 w-px bg-gray-100 hidden sm:block" />
-
-                  {/* Client */}
-                  <div className="flex-1 min-w-32">
-                    <div className="font-semibold text-sm text-gray-800 flex items-center gap-1.5">
-                      {order.clientName}
-                      {order.isProClient && (
-                        <span className="text-xs font-black px-1.5 py-0.5 rounded-sm text-white" style={{ background: COLOR.green }}>★ PRO</span>
-                      )}
-                    </div>
-                    <div className="text-xs text-gray-400">{order.clientPhone}{order.clientEmail ? ` · ${order.clientEmail}` : ''}</div>
-                    {order.isProClient && order.proClientName && (
-                      <div className="text-xs font-semibold" style={{ color: COLOR.green }}>{order.proClientName}</div>
-                    )}
-                  </div>
-
-                  {/* Items summary */}
-                  <div className="hidden md:block text-xs text-gray-500">
-                    {order.items.length} article{order.items.length !== 1 ? 's' : ''}
-                    {' · '}{order.items.reduce((s, i) => s + i.quantity, 0)} unité{order.items.reduce((s, i) => s + i.quantity, 0) !== 1 ? 's' : ''}
-                  </div>
-
-                  {/* Total */}
-                  <div className="font-black text-base" style={{ color: COLOR.red }}>
-                    {order.orderTotal.toFixed(2)} €
-                  </div>
-
-                  {/* Status badge */}
-                  <div>
-                    <span className="text-xs font-bold px-2 py-1 rounded-sm border"
-                      style={{ background: sc.bg, color: sc.text, borderColor: sc.border }}>
-                      {STATUS_LABELS[order.status]}
-                    </span>
-                  </div>
-
-                  {/* Expand icon */}
-                  <div className="text-gray-400 flex-shrink-0">
-                    {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-                  </div>
-                </div>
-
-                {/* Expanded detail */}
-                {isExpanded && (
-                  <div className="border-t" style={{ borderColor: '#f0f0f0' }}>
-                    {/* Items table */}
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-sm">
-                        <thead style={{ background: '#f6f6f6' }}>
-                          <tr>
-                            <TableHead>Article</TableHead>
-                            <TableHead>Unité</TableHead>
-                            <TableHead>Qté</TableHead>
-                            <TableHead>Prix unit.</TableHead>
-                            <TableHead>Total</TableHead>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {order.items.map((item, idx) => (
-                            <tr key={idx} className="border-t" style={{ borderColor: '#f0f0f0', background: idx % 2 === 0 ? 'white' : '#fafafa' }}>
-                              <td className="px-4 py-2.5 font-medium text-gray-800">{item.name}</td>
-                              <td className="px-4 py-2.5 text-gray-500 text-xs">{item.unit}</td>
-                              <td className="px-4 py-2.5 font-bold text-center" style={{ color: COLOR.red }}>{item.quantity}</td>
-                              <td className="px-4 py-2.5 text-gray-600">{item.unitPrice.toFixed(2)} €</td>
-                              <td className="px-4 py-2.5 font-black" style={{ color: COLOR.red }}>{item.total.toFixed(2)} €</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                        <tfoot>
-                          <tr style={{ background: COLOR.dark }}>
-                            <td colSpan={4} className="px-4 py-2.5 font-black text-right text-white text-xs uppercase tracking-wider">Total TTC</td>
-                            <td className="px-4 py-2.5 font-black text-white">{order.orderTotal.toFixed(2)} €</td>
-                          </tr>
-                        </tfoot>
-                      </table>
-                    </div>
-
-                    {/* Status actions */}
-                    <div className="flex flex-wrap items-center gap-2 px-4 py-3 border-t" style={{ borderColor: '#f0f0f0', background: '#fafafa' }}>
-                      <span className="text-xs font-black text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
-                        <Filter size={11} /> Statut :
-                      </span>
-                      {(['confirmed', 'pending', 'cancelled'] as const).map(s => (
-                        <button key={s} onClick={() => updateOrderStatus(order.orderId, s)}
-                          className="text-xs font-bold px-3 py-1.5 rounded-sm border"
-                          style={{
-                            background:  order.status === s ? STATUS_COLORS[s].bg : 'white',
-                            color:       STATUS_COLORS[s].text,
-                            borderColor: order.status === s ? STATUS_COLORS[s].text : '#e5e5e5',
-                            fontWeight:  order.status === s ? 900 : 600,
-                          }}>
-                          {STATUS_LABELS[s]}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </>
-  );
-}
-
-// ═══════════════════════════════════════════════════════════════════════════════
 // DASHBOARD SHELL
 // ═══════════════════════════════════════════════════════════════════════════════
-type Tab = 'products' | 'pro-clients' | 'orders';
+type Tab = 'products' | 'pro-clients' ;
 
 export default function AdminDashboard() {
-  const { logout, globalOrders } = useApp();
+  const { logout } = useApp();
   const [tab, setTab] = useState<Tab>('products');
 
-  const pendingCount = globalOrders.filter(o => o.status === 'pending').length;
 
   return (
     <div style={{ background: '#f6f6f6', minHeight: '100vh' }}>
@@ -4149,21 +4463,7 @@ export default function AdminDashboard() {
         <div className="flex gap-2 mb-6 border-b" style={{ borderColor: '#e5e5e5' }}>
           {([
             { id: 'products',    label: '📦 Produits'   },
-            { id: 'pro-clients', label: '🏢 Clients Pro' },
-            {
-              id: 'orders',
-              label: (
-                <span className="flex items-center gap-2">
-                  🧾 Historique des commandes
-                  {pendingCount > 0 && (
-                    <span className="text-xs font-black px-1.5 py-0.5 rounded-full text-white leading-none"
-                      style={{ background: COLOR.red }}>
-                      {pendingCount}
-                    </span>
-                  )}
-                </span>
-              ),
-            },
+            { id: 'pro-clients', label: '🏢 Clients Pro' }
           ] as { id: Tab; label: React.ReactNode }[]).map(t => (
             <button key={t.id} onClick={() => setTab(t.id)}
               className="px-5 py-2.5 text-sm font-bold border-b-2 -mb-px flex items-center"
@@ -4175,695 +4475,11 @@ export default function AdminDashboard() {
 
         {tab === 'products'    && <ProductsTab />}
         {tab === 'pro-clients' && <ProClientsTab />}
-        {tab === 'orders'      && <OrdersTab />}
 
         <div className="pb-10" />
       </div>
     </div>
   );
-}
-</file>
-
-<file path="src/types/index.ts">
-// ── Product ───────────────────────────────────────────────────────────────────
-
-export type Category = string; // Now fully dynamic from database
-
-export interface Product {
-  id:           string;
-  name:         string;
-  category:     string;
-  subcategory?: string;
-  price:        number;   // Prix TTC (displayed to normal clients)
-  prixHT?:      number;   // Prix HT (for admin reference)
-  tva?:         string;   // '5.5%' | '20%'
-  unit:         string;
-  image:        string;
-  variantId:    string;
-  inStock:      boolean;
-  description:  string;
-  discount?:    number;   // percentage e.g. 15 = 15% off
-  isNew?:       boolean;
-  featured?:    boolean;
-  tags?:        string[];
-  createdAt?:   string;   // ISO date
-}
-
-// ── Cart ─────────────────────────────────────────────────────────────────────
-
-export interface CartItem extends Product {
-  quantity:       number;
-  effectivePrice: number;
-}
-
-// ── Pro Client ────────────────────────────────────────────────────────────────
-
-export interface PriceOverrides { [productId: string]: number; }
-
-export interface OrderLineItem {
-  productId: string; name: string; unit: string;
-  quantity: number; unitPrice: number; total: number;
-}
-
-export interface OrderRecord {
-  orderId: string; date: string; clientName: string;
-  phone: string; email: string; items: OrderLineItem[]; subtotal: number;
-}
-
-export interface ProClient {
-  id: string; name: string; company?: string;
-  accessCode: string; priceOverrides: PriceOverrides;
-  purchaseHistory: OrderRecord[]; createdAt: string;
-  email?: string;
-}
-
-// ── Context ───────────────────────────────────────────────────────────────────
-
-export interface AppContextType {
-  products: Product[];
-  addProduct: (p: Omit<Product, 'id'>) => void;
-  updateProduct: (p: Product) => void;
-  deleteProduct: (id: string) => void;
-  cart: CartItem[];
-  cartOpen: boolean;
-  setCartOpen: (v: boolean) => void;
-  addToCart: (product: Product) => void;
-  removeFromCart: (id: string) => void;
-  updateQty: (id: string, qty: number) => void;
-  clearCart: () => void;
-  cartTotal: number;
-  cartCount: number;
-  priceFor: (product: Product) => number;
-  effectivePrice: (product: Product) => number;
-  page: PageKey;
-  navigate: (p: PageKey) => void;
-  searchQuery: string;
-  setSearchQuery: (q: string) => void;
-  submitSearch: (q: string) => void;
-  adminAuth: boolean;
-  login: (pw: string) => boolean;
-  logout: () => void;
-  proClients: ProClient[];
-  addProClient: (name: string, company?: string) => ProClient;
-  updateProClient: (c: ProClient) => void;
-  deleteProClient: (id: string) => void;
-  setPriceOverride: (clientId: string, productId: string, price: number | null) => void;
-  activeProClient: ProClient | null;
-  loginProClient: (code: string) => boolean;
-  logoutProClient: () => void;
-  recordOrder: (clientId: string, order: OrderRecord) => void;
-  proLoginOpen: boolean;
-  setProLoginOpen: (v: boolean) => void;
-  checkoutOpen: boolean;
-  setCheckoutOpen: (v: boolean) => void;
-  checkout: () => void;
-}
-
-export type PageKey = 'home' | 'products' | 'admin';
-export type SortOption = 'default' | 'price-asc' | 'price-desc' | 'name';
-export type PriceRange = [number, number];
-export type ImageInputMode = 'url' | 'upload';
-
-export interface ProductFormState {
-  name: string; category: string; subcategory: string;
-  price: string; prixHT: string; tva: string;
-  unit: string; image: string; variantId: string;
-  inStock: boolean; description: string;
-  discount: string; isNew: boolean; featured: boolean;
-}
-
-export interface PdfOrderData {
-  orderId: string; clientName: string; phone: string; email: string;
-  date: string; items: OrderLineItem[]; subtotal: number;
-  isProClient: boolean; proClientName?: string;
-}
-
-// ── Global Orders (admin history) ────────────────────────────────────────────
-export interface GlobalOrder {
-  orderId:        string;
-  date:           string;
-  clientName:     string;
-  clientPhone:    string;
-  clientEmail:    string;
-  isProClient:    boolean;
-  proClientId?:   string;
-  proClientName?: string;
-  items:          OrderLineItem[];
-  orderTotal:     number;
-  status:         'pending' | 'confirmed' | 'cancelled';
-}
-</file>
-
-<file path="src/context/AppContext.tsx">
-import {
-  createContext, useContext, useState, useEffect,
-  useCallback, useMemo, type ReactNode,
-} from 'react';
-import type { Product, CartItem, AppContextType, PageKey, ProClient, OrderRecord } from '../types';
-import { SEED_PRODUCTS, SEED_PRO_CLIENTS } from '../data/products';
-import {
-  ADMIN_ROUTE, ADMIN_PASSWORD, SHOPIFY_STORE,
-  LS_PRODUCTS, LS_CART, LS_PRO_CLIENTS,
-  SS_ADMIN, SS_PRO_CLIENT,
-} from '../data/constants';
-
-// ── Storage helpers ───────────────────────────────────────────────────────────
-function readLS<T>(key: string, fallback: T): T {
-  try { const r = localStorage.getItem(key); return r ? JSON.parse(r) : fallback; }
-  catch { return fallback; }
-}
-function writeLS(key: string, val: unknown) {
-  try { localStorage.setItem(key, JSON.stringify(val)); } catch {}
-}
-
-function initialPage(): PageKey {
-  const h = window.location.hash.replace(/^#\/?/, '');
-  if (h === ADMIN_ROUTE) return 'admin';
-  if (h === 'products')  return 'products';
-  return 'home';
-}
-
-// ── 6-digit code generator ────────────────────────────────────────────────────
-function gen6DigitCode(existing: string[]): string {
-  let code: string;
-  do { code = String(Math.floor(100000 + Math.random() * 900000)); }
-  while (existing.includes(code));
-  return code;
-}
-
-const AppContext = createContext<AppContextType | null>(null);
-
-export const LS_GLOBAL_ORDERS = 'ef_global_orders';
-
-export function AppProvider({ children }: { children: ReactNode }) {
-
-  // ── Cache busting — bump version whenever SEED_PRODUCTS changes ──────────
-  const CACHE_VERSION = 'v2';
-  if (localStorage.getItem('ef_version') !== CACHE_VERSION) {
-    localStorage.removeItem('ef_products');
-    localStorage.setItem('ef_version', CACHE_VERSION);
-  }
-
-  const [products,  setProducts]  = useState<Product[]>   (() => readLS(LS_PRODUCTS,    SEED_PRODUCTS));
-  const [cart,      setCart]      = useState<CartItem[]>   (() => readLS(LS_CART,        []));
-  const [proClients,setProClients]= useState<ProClient[]>  (() => readLS(LS_PRO_CLIENTS, SEED_PRO_CLIENTS));
-  const [cartOpen,  setCartOpen]  = useState(false);
-  const [adminAuth, setAdminAuth] = useState(() => sessionStorage.getItem(SS_ADMIN) === 'yes');
-  const [page,      setPage]      = useState<PageKey>(initialPage);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [proLoginOpen,  setProLoginOpen]  = useState(false);
-  const [checkoutOpen,  setCheckoutOpen]  = useState(false);
-  const [activeProClient, setActiveProClient] = useState<ProClient | null>(() => {
-    try {
-      const s = sessionStorage.getItem(SS_PRO_CLIENT);
-      if (!s) return null;
-      const saved = JSON.parse(s) as ProClient;
-      // Refresh from proClients state in case overrides changed
-      return saved;
-    } catch { return null; }
-  });
-
-  useEffect(() => writeLS(LS_PRODUCTS,    products),   [products]);
-  useEffect(() => writeLS(LS_CART,        cart),       [cart]);
-  useEffect(() => writeLS(LS_PRO_CLIENTS, proClients), [proClients]);
-
-  // Sync active pro client when proClients list changes
-  useEffect(() => {
-    if (activeProClient) {
-      const refreshed = proClients.find(c => c.id === activeProClient.id);
-      if (refreshed) {
-        setActiveProClient(refreshed);
-        sessionStorage.setItem(SS_PRO_CLIENT, JSON.stringify(refreshed));
-      }
-    }
-  }, [proClients]); // eslint-disable-line
-
-  // Hash router
-  const navigate = useCallback((p: PageKey) => {
-    setPage(p);
-    window.location.hash = p === 'home' ? '' : p;
-    window.scrollTo({ top: 0 });
-  }, []);
-
-  useEffect(() => {
-    const onHash = () => setPage(initialPage());
-    window.addEventListener('hashchange', onHash);
-    return () => window.removeEventListener('hashchange', onHash);
-  }, []);
-
-  // Search
-  const submitSearch = useCallback((q: string) => {
-    setSearchQuery(q);
-    navigate('products');
-  }, [navigate]);
-
-  // ── Pricing helpers ─────────────────────────────────────────────────────────
-  const priceFor = useCallback((product: Product): number => {
-    if (activeProClient) {
-      const override = activeProClient.priceOverrides[product.id];
-      if (override !== undefined && override !== null) return override;
-    }
-    return product.price;
-  }, [activeProClient]);
-
-  // Price after discount (for non-pro standard display)
-  const effectivePrice = useCallback((product: Product): number => {
-    const base = priceFor(product);
-    if (!activeProClient && product.discount) {
-      return parseFloat((base * (1 - product.discount / 100)).toFixed(2));
-    }
-    return base;
-  }, [priceFor, activeProClient]);
-
-  // ── Cart ────────────────────────────────────────────────────────────────────
-  const addToCart = useCallback((product: Product) => {
-    const ep = effectivePrice(product);
-    setCart(prev => {
-      const ex = prev.find(i => i.id === product.id);
-      return ex
-        ? prev.map(i => i.id === product.id ? { ...i, quantity: i.quantity + 1 } : i)
-        : [...prev, { ...product, quantity: 1, effectivePrice: ep }];
-    });
-  }, [effectivePrice]);
-
-  const removeFromCart  = useCallback((id: string) => setCart(p => p.filter(i => i.id !== id)), []);
-  const updateQty       = useCallback((id: string, qty: number) => {
-    if (qty <= 0) { removeFromCart(id); return; }
-    setCart(p => p.map(i => i.id === id ? { ...i, quantity: qty } : i));
-  }, [removeFromCart]);
-  const clearCart = useCallback(() => setCart([]), []);
-
-  const cartTotal = useMemo(() => cart.reduce((s, i) => s + i.effectivePrice * i.quantity, 0), [cart]);
-  const cartCount = useMemo(() => cart.reduce((s, i) => s + i.quantity, 0), [cart]);
-
-  // ── Auth ────────────────────────────────────────────────────────────────────
-  const login = useCallback((pw: string): boolean => {
-    if (pw === ADMIN_PASSWORD) { sessionStorage.setItem(SS_ADMIN, 'yes'); setAdminAuth(true); return true; }
-    return false;
-  }, []);
-
-  const logout = useCallback(() => {
-    sessionStorage.removeItem(SS_ADMIN);
-    setAdminAuth(false);
-    navigate('home');
-  }, [navigate]);
-
-  // ── Pro client auth ─────────────────────────────────────────────────────────
-  const loginProClient = useCallback((code: string): boolean => {
-    const client = proClients.find(c => c.accessCode === code.trim());
-    if (client) {
-      sessionStorage.setItem(SS_PRO_CLIENT, JSON.stringify(client));
-      setActiveProClient(client);
-      setProLoginOpen(false);
-      return true;
-    }
-    return false;
-  }, [proClients]);
-
-  const logoutProClient = useCallback(() => {
-    sessionStorage.removeItem(SS_PRO_CLIENT);
-    setActiveProClient(null);
-  }, []);
-
-  // ── Pro clients CRUD ────────────────────────────────────────────────────────
-  const addProClient = useCallback((name: string, company?: string, email?: string): ProClient => {
-    const existing = proClients.map(c => c.accessCode);
-    const newClient: ProClient = {
-      id: `pc${Date.now()}`,
-      name,
-      company,
-      email,
-      accessCode: gen6DigitCode(existing),
-      priceOverrides: {},
-      purchaseHistory: [],
-      createdAt: new Date().toISOString().split('T')[0],
-    };
-    setProClients(prev => [...prev, newClient]);
-    return newClient;
-  }, [proClients]);
-
-  const updateProClient = useCallback((c: ProClient) => {
-    setProClients(prev => prev.map(x => x.id === c.id ? c : x));
-  }, []);
-
-  const deleteProClient = useCallback((id: string) => {
-    setProClients(prev => prev.filter(x => x.id !== id));
-    if (activeProClient?.id === id) logoutProClient();
-  }, [activeProClient, logoutProClient]);
-
-  const setPriceOverride = useCallback((clientId: string, productId: string, price: number | null) => {
-    setProClients(prev => prev.map(c => {
-      if (c.id !== clientId) return c;
-      const overrides = { ...c.priceOverrides };
-      if (price === null) delete overrides[productId];
-      else overrides[productId] = price;
-      return { ...c, priceOverrides: overrides };
-    }));
-  }, []);
-
-  const recordOrder = useCallback((clientId: string, order: OrderRecord) => {
-    setProClients(prev => prev.map(c =>
-      c.id === clientId
-        ? { ...c, purchaseHistory: [order, ...c.purchaseHistory] }
-        : c
-    ));
-  }, []);
-
-  // ── Product CRUD ────────────────────────────────────────────────────────────
-  const addProduct    = useCallback((p: Omit<Product, 'id'>) =>
-    setProducts(prev => [...prev, { ...p, id: `p${Date.now()}` }]), []);
-  const updateProduct = useCallback((p: Product) =>
-    setProducts(prev => prev.map(x => x.id === p.id ? p : x)), []);
-  const deleteProduct = useCallback((id: string) => {
-    setProducts(prev => prev.filter(x => x.id !== id));
-    setCart(prev => prev.filter(x => x.id !== id));
-  }, []);
-
-  // ── Shopify checkout (fallback) ─────────────────────────────────────────────
-  const checkout = useCallback(() => {
-    if (!cart.length) return;
-    const str = cart.map(i => `${i.variantId}:${i.quantity}`).join(',');
-    window.open(`https://${SHOPIFY_STORE}.myshopify.com/cart/${str}`, '_blank');
-  }, [cart]);
-
-  return (
-    <AppContext.Provider value={{
-      products, addProduct, updateProduct, deleteProduct,
-      cart, cartOpen, setCartOpen, addToCart, removeFromCart, updateQty,
-      clearCart, cartTotal, cartCount,
-      priceFor, effectivePrice,
-      page, navigate,
-      searchQuery, setSearchQuery, submitSearch,
-      adminAuth, login, logout,
-      proClients, addProClient, updateProClient, deleteProClient,
-      setPriceOverride,
-      activeProClient, loginProClient, logoutProClient, recordOrder,
-      proLoginOpen, setProLoginOpen,
-      checkoutOpen, setCheckoutOpen,
-      checkout,
-    }}>
-      {children}
-    </AppContext.Provider>
-  );
-}
-
-// eslint-disable-next-line react-refresh/only-export-components
-export function useApp(): AppContextType {
-  const ctx = useContext(AppContext);
-  if (!ctx) throw new Error('useApp must be used inside <AppProvider>');
-  return ctx;
-}
-</file>
-
-<file path="src/data/constants.ts">
-// ── Brand ─────────────────────────────────────────────────────────────────────
-export const BRAND_NAME    = 'Express Food';
-export const BRAND_TAGLINE = 'Livraison Express à domicile';
-
-// ── Admin ─────────────────────────────────────────────────────────────────────
-export const ADMIN_ROUTE     = '281938821';
-export const ADMIN_PASSWORD  = 'ENSA_Grocery2024!';
-
-// ── Shopify ───────────────────────────────────────────────────────────────────
-export const SHOPIFY_STORE   = 'your-store-name';
-
-// ── Palette ───────────────────────────────────────────────────────────────────
-export const COLOR = {
-  red:    '#E31E24',
-  green:  '#2D8A2D',
-  dark:   '#111111',
-  navBg:  '#1a1a1a',
-  darkBg: '#0d0d0d',
-  grayBg: '#f6f6f6',
-  border: '#e5e5e5',
-  redDark:'#b91519',
-} as const;
-
-// ── LocalStorage / SessionStorage keys ───────────────────────────────────────
-export const LS_PRODUCTS    = 'ef_products';
-export const LS_CART        = 'ef_cart';
-export const LS_PRO_CLIENTS = 'ef_pro_clients';
-export const SS_ADMIN       = 'ef_admin';
-export const SS_PRO_CLIENT  = 'ef_pro_session';
-
-// ── Categories (real product database) ───────────────────────────────────────
-export const PRODUCT_CATEGORIES = [
-  'Boissons',
-  'Desserts',
-  'Farines & Épices',
-  'Fromages & Crèmes',
-  'Frites & Snacks',
-  'Fruits & Légumes',
-  'Huiles & Condiments',
-  'Packaging',
-  'Pains & Riz',
-  'Promotions',
-  'Sauces',
-  'Viandes',
-] as const;
-
-export const ALL_CATEGORIES = ['All', ...PRODUCT_CATEGORIES] as const;
-
-export const CAT_ICON: Record<string, string> = {
-  'Boissons':           '🥤',
-  'Desserts':           '🍰',
-  'Farines & Épices':   '🌾',
-  'Fromages & Crèmes':  '🧀',
-  'Frites & Snacks':    '🍟',
-  'Fruits & Légumes':   '🥦',
-  'Huiles & Condiments':'🫙',
-  'Packaging':          '📦',
-  'Pains & Riz':        '🍞',
-  'Promotions':         '🏷️',
-  'Sauces':             '🥫',
-  'Viandes':            '🥩',
-};
-
-// ── TVA rates ─────────────────────────────────────────────────────────────────
-export const TVA_RATES = {
-  '5.5%': 0.055,
-  '20%':  0.20,
-} as const;
-
-// ── Price-range presets ───────────────────────────────────────────────────────
-export const PRICE_RANGES: { label: string; val: [number, number] }[] = [
-  { label:'Tous les prix', val:[0,1000] },
-  { label:'Moins de 5 €', val:[0,5]    },
-  { label:'5 – 15 €',     val:[5,15]   },
-  { label:'15 – 50 €',    val:[15,50]  },
-  { label:'Plus de 50 €', val:[50,1000]},
-];
-
-// ── Delivery zones ────────────────────────────────────────────────────────────
-export const DRIVE_STORES = [
-  'Paris – 75001','Paris – 75008','Lyon – Centre',
-  'Marseille – Centre','Bordeaux','Toulouse',
-];
-</file>
-
-<file path="src/utils/pdfGenerator.ts">
-// src/utils/pdfGenerator.ts
-// Generates branded Express Food PDFs.
-// Pass withPrices: true  → includes unit prices + total (client-facing / admin)
-// Pass withPrices: false → items + quantity only, NO prices (admin no-price copy)
-
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
-
-export interface PdfOptions {
-  orderRef: string;
-  clientName: string;
-  clientPhone: string;
-  clientEmail?: string;
-  isProClient: boolean;
-  proClientName?: string;
-  items: Array<{
-    name: string;
-    quantity: number;
-    unitPrice: number;
-    totalPrice: number;
-  }>;
-  orderTotal: number;
-  /** true = show prices (default); false = items + qty only */
-  withPrices?: boolean;
-}
-
-/** Generates and auto-downloads a PDF. */
-export function generatePDF(opts: PdfOptions): void {
-  buildDoc(opts).save(`commande_EF-${opts.orderRef}.pdf`);
-}
-
-/** Generates and returns the PDF as a Blob (for webhook attachment). */
-export function generatePDFBlob(opts: PdfOptions): Blob {
-  return buildDoc(opts).output("blob");
-}
-
-// ─── Internal builder ────────────────────────────────────────────────────────
-
-function buildDoc(opts: PdfOptions): jsPDF {
-  const showPrices = opts.withPrices !== false; // default true
-
-  const doc   = new jsPDF({ unit: "mm", format: "a4" });
-  const red   = "#E31E24";
-  const green = "#2D8A2D";
-  const dark  = "#111111";
-  const w     = doc.internal.pageSize.getWidth();
-
-  // ── Header stripes ─────────────────────────────────────────────────────────
-  doc.setFillColor(red);
-  doc.rect(0, 0, w, 22, "F");
-  doc.setFillColor(green);
-  doc.rect(0, 22, w, 5, "F");
-
-  doc.setTextColor("#FFFFFF");
-  doc.setFontSize(18);
-  doc.setFont("helvetica", "bold");
-  const headerTitle = showPrices
-    ? "Express Food — Bon de commande"
-    : "Express Food — Bon de commande (Admin — sans prix)";
-  doc.text(headerTitle, w / 2, 14, { align: "center" });
-
-  // ── Order ref box ──────────────────────────────────────────────────────────
-  doc.setFillColor("#F5F5F5");
-  doc.roundedRect(14, 32, w - 28, 20, 3, 3, "F");
-  doc.setTextColor(dark);
-  doc.setFontSize(12);
-  doc.setFont("helvetica", "bold");
-  doc.text(`Commande #EF-${opts.orderRef}`, 20, 41);
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(9);
-  doc.setTextColor("#555555");
-  doc.text(`Émis le : ${new Date().toLocaleString("fr-FR")}`, 20, 48);
-
-  // ── Client details ─────────────────────────────────────────────────────────
-  doc.setFontSize(10);
-  doc.setTextColor(dark);
-  doc.setFont("helvetica", "bold");
-  doc.text("Informations client", 14, 62);
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(9);
-  doc.setTextColor("#333333");
-  doc.text(`Nom : ${opts.clientName}`, 14, 69);
-  doc.text(`Téléphone : ${opts.clientPhone}`, 14, 75);
-  if (opts.clientEmail) doc.text(`Email : ${opts.clientEmail}`, 14, 81);
-
-  if (opts.isProClient && opts.proClientName) {
-    const badgeY = opts.clientEmail ? 90 : 84;
-    const badgeLabel = `Compte Pro : ${opts.proClientName}`;
-    // measure text width to size the badge correctly
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(8);
-    const textWidth = doc.getTextWidth(badgeLabel) + 8;
-    doc.setFillColor(green);
-    doc.roundedRect(14, badgeY - 5, textWidth, 8, 2, 2, "F");
-    doc.setTextColor("#FFFFFF");
-    doc.text(badgeLabel, 17, badgeY);
-  }
-
-  // ── Items table ────────────────────────────────────────────────────────────
-  const tableStartY = opts.isProClient && opts.proClientName
-    ? (opts.clientEmail ? 102 : 96)
-    : (opts.clientEmail ? 90 : 84);
-
-  doc.setTextColor(dark);
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(10);
-  doc.text("Détail de la commande", 14, tableStartY);
-
-  if (showPrices) {
-    // With prices: Article | Qté | Prix unit. | Total
-    autoTable(doc, {
-      startY: tableStartY + 4,
-      head: [["Article", "Qté", "Prix unit.", "Total"]],
-      body: opts.items.map((item) => [
-        item.name,
-        item.quantity.toString(),
-        `${item.unitPrice.toFixed(2)} €`,
-        `${item.totalPrice.toFixed(2)} €`,
-      ]),
-      headStyles: { fillColor: red, textColor: "#FFFFFF", fontStyle: "bold", fontSize: 9 },
-      bodyStyles: { fontSize: 9, textColor: dark },
-      alternateRowStyles: { fillColor: "#FAFAFA" },
-      columnStyles: {
-        0: { cellWidth: "auto" },
-        1: { cellWidth: 20, halign: "center" },
-        2: { cellWidth: 30, halign: "right" },
-        3: { cellWidth: 30, halign: "right" },
-      },
-      foot: [[
-        { content: "TOTAL", colSpan: 3, styles: { halign: "right", fontStyle: "bold", fillColor: red, textColor: "#FFFFFF" } },
-        { content: `${opts.orderTotal.toFixed(2)} €`, styles: { halign: "right", fontStyle: "bold", fillColor: red, textColor: "#FFFFFF" } },
-      ]],
-      margin: { left: 14, right: 14 },
-    });
-  } else {
-    // Without prices: Article | Quantité only
-    autoTable(doc, {
-      startY: tableStartY + 4,
-      head: [["Article", "Quantité"]],
-      body: opts.items.map((item) => [item.name, item.quantity.toString()]),
-      headStyles: { fillColor: red, textColor: "#FFFFFF", fontStyle: "bold", fontSize: 9 },
-      bodyStyles: { fontSize: 9, textColor: dark },
-      alternateRowStyles: { fillColor: "#FAFAFA" },
-      columnStyles: {
-        0: { cellWidth: "auto" },
-        1: { cellWidth: 30, halign: "center" },
-      },
-      margin: { left: 14, right: 14 },
-    });
-  }
-
-  // ── Footer ─────────────────────────────────────────────────────────────────
-  const finalY = (doc as any).lastAutoTable.finalY + 10;
-  doc.setDrawColor(green);
-  doc.setLineWidth(0.5);
-  doc.line(14, finalY, w - 14, finalY);
-  doc.setFontSize(8);
-  doc.setTextColor("#888888");
-  doc.setFont("helvetica", "normal");
-  const footerText = showPrices
-    ? "Merci pour votre commande — Express Food · contact@expressfood.ma"
-    : "Document réservé à l'usage interne — Express Food";
-  doc.text(footerText, w / 2, finalY + 6, { align: "center" });
-
-  return doc;
-}
-</file>
-
-<file path="src/components/Logo.tsx">
-interface Props {
-  size?: number;
-  variant?: 'full' | 'mark';
-  className?: string;
-}
-
-export default function Logo({ size = 40, className = '' }: Props) {
-  return (
-    <img
-      src="/logo.png"
-      alt="Express Food"
-      style={{ height: size * 1.4, width: 'auto', objectFit: 'contain' }}
-      className={className}
-    />
-  );
-}
-
-export function LogoMark({ width, height }: { width: number; height: number }) {
-  return (
-    <img
-      src="/logo.png"
-      alt="Express Food"
-      style={{ height: height * 1.4, width: 'auto', objectFit: 'contain' }}
-    />
-  );
-}
-
-export function LogoDark({ size = 40, className = '' }: Omit<Props, 'variant'>) {
-  return <Logo size={size} className={className} />;
-}
-
-export function LogoLight({ size = 40, className = '' }: Omit<Props, 'variant'>) {
-  return <Logo size={size} className={className} />;
 }
 </file>
 

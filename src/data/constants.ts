@@ -4,7 +4,7 @@ export const BRAND_TAGLINE = 'Livraison Express à domicile';
 
 // ── Admin ─────────────────────────────────────────────────────────────────────
 export const ADMIN_ROUTE     = '281938821';
-export const ADMIN_PASSWORD  = 'ENSA_Grocery2024!';
+export const ADMIN_PASSWORD  = import.meta.env.VITE_ADMIN_PASSWORD ?? 'D2L1AV2G1A7!2_846!';
 
 // ── Shopify ───────────────────────────────────────────────────────────────────
 export const SHOPIFY_STORE   = 'your-store-name';

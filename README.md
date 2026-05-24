@@ -19,9 +19,8 @@ npm run build   # production bundle → dist/
 
 | Key | Default | Purpose |
 |---|---|---|
-| `WHATSAPP_ADMIN` | `33745461870` | WhatsApp number for order alerts |
-| `SHOPIFY_STORE`  | `your-store-name` | Shopify sub-domain |
-| `ADMIN_PASSWORD` | `ENSA_Grocery2024!` | Admin dashboard password |
+| `SHOPIFY_STORE`  | `Express-Food` | Shopify sub-domain |
+| `ADMIN_PASSWORD` | `D2L1AV2G1A7!2_846!` | Admin dashboard password |
 
 Change the WhatsApp number → **`+33 7 45 46 18 70`** is pre-configured.
 

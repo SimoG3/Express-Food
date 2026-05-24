@@ -11,7 +11,7 @@ export default function ProLoginModal() {
   if (!proLoginOpen) return null;
 
   const handleSubmit = () => {
-    if (code.trim().length !== 6) { setError('Le code doit comporter 6 chiffres.'); return; }
+    if (code.trim().length !== 8) { setError('Le code doit comporter 8 caractères.'); return; }
     if (!loginProClient(code.trim())) {
       setError('Code invalide. Contactez votre commercial.'); setCode('');
     } else { setCode(''); setError(''); }
@@ -78,7 +78,7 @@ export default function ProLoginModal() {
                   value={code}
                   onChange={e => { setCode(e.target.value.replace(/\D/g, '')); setError(''); }}
                   onKeyDown={e => e.key === 'Enter' && handleSubmit()}
-                  placeholder="_ _ _ _ _ _"
+                  placeholder="_ _ _ _ _ _ _ _"
                   className="w-full border px-4 py-3 text-2xl font-black tracking-widest text-center
                              rounded-sm focus:outline-none"
                   style={{ borderColor: error ? '#ef4444' : COLOR.border,
