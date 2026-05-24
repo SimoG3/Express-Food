@@ -88,6 +88,7 @@ export interface AppContextType {
   proLoginOpen: boolean;
   setProLoginOpen: (v: boolean) => void;
   checkoutOpen: boolean;
+  loading: boolean;
   setCheckoutOpen: (v: boolean) => void;
   checkout: () => void;
 }

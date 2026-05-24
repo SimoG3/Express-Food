@@ -12,7 +12,23 @@ import AdminDashboard    from './pages/AdminDashboard';
 
 // ── Inner shell (needs context access) ───────────────────────────────────────
 function AppContent() {
-  const { page, adminAuth } = useApp();
+  const { page, adminAuth, loading } = useApp();
+
+  // Loading screen while KV data is being fetched
+  if (loading) return (
+    <div className="min-h-screen flex items-center justify-center"
+      style={{ background: '#111111' }}>
+      <div className="text-center">
+        <div style={{ fontSize: '64px' }}>🚗</div>
+        <p className="font-black text-xl mt-3" style={{ color: '#E31E24' }}>
+          EXPRESS FOOD
+        </p>
+        <p className="text-sm mt-2" style={{ color: '#6b7280' }}>
+          Chargement du catalogue…
+        </p>
+      </div>
+    </div>
+  );
 
   // Admin is a completely standalone route — no shared layout
   if (page === 'admin') {

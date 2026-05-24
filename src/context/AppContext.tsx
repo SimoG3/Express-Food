@@ -10,7 +10,27 @@ import {
   SS_ADMIN, SS_PRO_CLIENT,
 } from '../data/constants';
 
-// ── Storage helpers ───────────────────────────────────────────────────────────
+// ── KV helpers ────────────────────────────────────────────────────────────────
+async function kvGet<T>(key: string, fallback: T): Promise<T> {
+  try {
+    const res = await fetch(`/api/store?key=${key}`);
+    if (!res.ok) return fallback;
+    const data = await res.json();
+    return data ?? fallback;
+  } catch { return fallback; }
+}
+
+async function kvSet(key: string, value: unknown): Promise<void> {
+  try {
+    await fetch('/api/store', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ key, value }),
+    });
+  } catch (e) { console.error('KV save failed:', e); }
+}
+
+// ── localStorage helpers (cart only) ─────────────────────────────────────────
 function readLS<T>(key: string, fallback: T): T {
   try { const r = localStorage.getItem(key); return r ? JSON.parse(r) : fallback; }
   catch { return fallback; }
@@ -26,7 +46,7 @@ function initialPage(): PageKey {
   return 'home';
 }
 
-// ── alphanumerical code generator ────────────────────────────────────────────────────
+// ── Alphanumeric access code generator ───────────────────────────────────────
 const ALPHANUM = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no 0/O/1/I to avoid confusion
 function genAccessCode(existing: string[]): string {
   let code: string;
@@ -41,38 +61,43 @@ function genAccessCode(existing: string[]): string {
 const AppContext = createContext<AppContextType | null>(null);
 
 export function AppProvider({ children }: { children: ReactNode }) {
-
-  // ── Cache busting — bump version whenever SEED_PRODUCTS changes ──────────
-  const CACHE_VERSION = 'v2';
-  if (localStorage.getItem('ef_version') !== CACHE_VERSION) {
-    localStorage.removeItem('ef_products');
-    localStorage.setItem('ef_version', CACHE_VERSION);
-  }
-
-  const [products,  setProducts]  = useState<Product[]>   (() => readLS(LS_PRODUCTS,    SEED_PRODUCTS));
-  const [cart,      setCart]      = useState<CartItem[]>   (() => readLS(LS_CART,        []));
-  const [proClients,setProClients]= useState<ProClient[]>  (() => readLS(LS_PRO_CLIENTS, SEED_PRO_CLIENTS));
-  const [cartOpen,  setCartOpen]  = useState(false);
-  const [adminAuth, setAdminAuth] = useState(() => sessionStorage.getItem(SS_ADMIN) === 'yes');
-  const [page,      setPage]      = useState<PageKey>(initialPage);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [proLoginOpen,  setProLoginOpen]  = useState(false);
-  const [checkoutOpen,  setCheckoutOpen]  = useState(false);
+  const [products,        setProducts]        = useState<Product[]>(SEED_PRODUCTS);
+  const [proClients,      setProClients]      = useState<ProClient[]>(SEED_PRO_CLIENTS);
+  const [cart,            setCart]            = useState<CartItem[]>(() => readLS(LS_CART, []));
+  const [loading,         setLoading]         = useState(true);
+  const [cartOpen,        setCartOpen]        = useState(false);
+  const [adminAuth,       setAdminAuth]       = useState(() => sessionStorage.getItem(SS_ADMIN) === 'yes');
+  const [page,            setPage]            = useState<PageKey>(initialPage);
+  const [searchQuery,     setSearchQuery]     = useState('');
+  const [proLoginOpen,    setProLoginOpen]    = useState(false);
+  const [checkoutOpen,    setCheckoutOpen]    = useState(false);
   const [activeProClient, setActiveProClient] = useState<ProClient | null>(() => {
     try {
       const s = sessionStorage.getItem(SS_PRO_CLIENT);
-      if (!s) return null;
-      const saved = JSON.parse(s) as ProClient;
-      // Refresh from proClients state in case overrides changed
-      return saved;
+      return s ? JSON.parse(s) as ProClient : null;
     } catch { return null; }
   });
 
-  useEffect(() => writeLS(LS_PRODUCTS,    products),   [products]);
-  useEffect(() => writeLS(LS_CART,        cart),       [cart]);
-  useEffect(() => writeLS(LS_PRO_CLIENTS, proClients), [proClients]);
+  // ── Load products + pro clients from KV on mount ──────────────────────────
+  useEffect(() => {
+    Promise.all([
+      kvGet<Product[]>(LS_PRODUCTS,      SEED_PRODUCTS),
+      kvGet<ProClient[]>(LS_PRO_CLIENTS, SEED_PRO_CLIENTS),
+    ]).then(([prods, pros]) => {
+      setProducts(prods);
+      setProClients(pros);
+      setLoading(false);
+    });
+  }, []);
 
-  // Sync active pro client when proClients list changes
+  // ── Save products to KV on change (skip during initial load) ─────────────
+  useEffect(() => { if (!loading) kvSet(LS_PRODUCTS,    products);   }, [products,   loading]);
+  useEffect(() => { if (!loading) kvSet(LS_PRO_CLIENTS, proClients); }, [proClients, loading]);
+
+  // ── Cart stays in localStorage (per-user) ────────────────────────────────
+  useEffect(() => { writeLS(LS_CART, cart); }, [cart]);
+
+  // ── Sync active pro client when proClients list changes ──────────────────
   useEffect(() => {
     if (activeProClient) {
       const refreshed = proClients.find(c => c.id === activeProClient.id);
@@ -83,7 +108,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }, [proClients]); // eslint-disable-line
 
-  // Hash router
+  // ── Hash router ───────────────────────────────────────────────────────────
   const navigate = useCallback((p: PageKey) => {
     setPage(p);
     window.location.hash = p === 'home' ? '' : p;
@@ -96,13 +121,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return () => window.removeEventListener('hashchange', onHash);
   }, []);
 
-  // Search
+  // ── Search ────────────────────────────────────────────────────────────────
   const submitSearch = useCallback((q: string) => {
     setSearchQuery(q);
     navigate('products');
   }, [navigate]);
 
-  // ── Pricing helpers ─────────────────────────────────────────────────────────
+  // ── Pricing ───────────────────────────────────────────────────────────────
   const priceFor = useCallback((product: Product): number => {
     if (activeProClient) {
       const override = activeProClient.priceOverrides[product.id];
@@ -111,7 +136,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return product.price;
   }, [activeProClient]);
 
-  // Price after discount (for non-pro standard display)
   const effectivePrice = useCallback((product: Product): number => {
     const base = priceFor(product);
     if (!activeProClient && product.discount) {
@@ -120,7 +144,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return base;
   }, [priceFor, activeProClient]);
 
-  // ── Cart ────────────────────────────────────────────────────────────────────
+  // ── Cart ──────────────────────────────────────────────────────────────────
   const addToCart = useCallback((product: Product) => {
     const ep = effectivePrice(product);
     setCart(prev => {
@@ -131,19 +155,28 @@ export function AppProvider({ children }: { children: ReactNode }) {
     });
   }, [effectivePrice]);
 
-  const removeFromCart  = useCallback((id: string) => setCart(p => p.filter(i => i.id !== id)), []);
-  const updateQty       = useCallback((id: string, qty: number) => {
+  const removeFromCart = useCallback((id: string) =>
+    setCart(p => p.filter(i => i.id !== id)), []);
+
+  const updateQty = useCallback((id: string, qty: number) => {
     if (qty <= 0) { removeFromCart(id); return; }
     setCart(p => p.map(i => i.id === id ? { ...i, quantity: qty } : i));
   }, [removeFromCart]);
+
   const clearCart = useCallback(() => setCart([]), []);
 
-  const cartTotal = useMemo(() => cart.reduce((s, i) => s + i.effectivePrice * i.quantity, 0), [cart]);
-  const cartCount = useMemo(() => cart.reduce((s, i) => s + i.quantity, 0), [cart]);
+  const cartTotal = useMemo(() =>
+    cart.reduce((s, i) => s + i.effectivePrice * i.quantity, 0), [cart]);
+  const cartCount = useMemo(() =>
+    cart.reduce((s, i) => s + i.quantity, 0), [cart]);
 
-  // ── Auth ────────────────────────────────────────────────────────────────────
+  // ── Admin auth ────────────────────────────────────────────────────────────
   const login = useCallback((pw: string): boolean => {
-    if (pw === ADMIN_PASSWORD) { sessionStorage.setItem(SS_ADMIN, 'yes'); setAdminAuth(true); return true; }
+    if (pw === ADMIN_PASSWORD) {
+      sessionStorage.setItem(SS_ADMIN, 'yes');
+      setAdminAuth(true);
+      return true;
+    }
     return false;
   }, []);
 
@@ -153,7 +186,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     navigate('home');
   }, [navigate]);
 
-  // ── Pro client auth ─────────────────────────────────────────────────────────
+  // ── Pro client auth ───────────────────────────────────────────────────────
   const loginProClient = useCallback((code: string): boolean => {
     const client = proClients.find(c => c.accessCode === code.trim());
     if (client) {
@@ -170,7 +203,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setActiveProClient(null);
   }, []);
 
-  // ── Pro clients CRUD ────────────────────────────────────────────────────────
+  // ── Pro clients CRUD ──────────────────────────────────────────────────────
   const addProClient = useCallback((name: string, company?: string, email?: string): ProClient => {
     const existing = proClients.map(c => c.accessCode);
     const newClient: ProClient = {
@@ -187,9 +220,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return newClient;
   }, [proClients]);
 
-  const updateProClient = useCallback((c: ProClient) => {
-    setProClients(prev => prev.map(x => x.id === c.id ? c : x));
-  }, []);
+  const updateProClient = useCallback((c: ProClient) =>
+    setProClients(prev => prev.map(x => x.id === c.id ? c : x)), []);
 
   const deleteProClient = useCallback((id: string) => {
     setProClients(prev => prev.filter(x => x.id !== id));
@@ -214,17 +246,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
     ));
   }, []);
 
-  // ── Product CRUD ────────────────────────────────────────────────────────────
-  const addProduct    = useCallback((p: Omit<Product, 'id'>) =>
+  // ── Product CRUD ──────────────────────────────────────────────────────────
+  const addProduct = useCallback((p: Omit<Product, 'id'>) =>
     setProducts(prev => [...prev, { ...p, id: `p${Date.now()}` }]), []);
+
   const updateProduct = useCallback((p: Product) =>
     setProducts(prev => prev.map(x => x.id === p.id ? p : x)), []);
+
   const deleteProduct = useCallback((id: string) => {
     setProducts(prev => prev.filter(x => x.id !== id));
     setCart(prev => prev.filter(x => x.id !== id));
   }, []);
 
-  // ── Shopify checkout (fallback) ─────────────────────────────────────────────
+  // ── Shopify checkout (fallback) ───────────────────────────────────────────
   const checkout = useCallback(() => {
     if (!cart.length) return;
     const str = cart.map(i => `${i.variantId}:${i.quantity}`).join(',');
@@ -246,6 +280,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       proLoginOpen, setProLoginOpen,
       checkoutOpen, setCheckoutOpen,
       checkout,
+      loading,
     }}>
       {children}
     </AppContext.Provider>
